@@ -38,39 +38,6 @@ from osgeo import gdal
 
 import glob
 
-ogrDatabase = ["PGeo",
-               "SDE",
-               "IDB",
-               "INGRES",
-               "MySQL",
-               "MSSQLSpatial",
-               "OCI",
-               "ODBC",
-               "OGDI",
-               "PostgreSQL",
-               "SQLite"   # file or db?
-              ]
-
-ogrDirectory = ["AVCBin",
-                "GRASS",
-                "UK. NTF",
-                "TIGER"
-               ]
-
-ogrProtocol = ["DODS",
-               "GeoJSON"   # file or protocol?
-              ]
-
-vectorProviders = ["gpx",
-                   "osm",
-                   "grass",
-                   "memory",
-                   "postgres",
-                   "spatialite",
-                   "sqlanywhere",
-                   "delimitedtext"
-                  ]
-
 
 class ConsolidateThread(QThread):
     processError = pyqtSignal(str)
@@ -113,32 +80,12 @@ class ConsolidateThread(QThread):
         layers = self.iface.legendInterface().layers()
         self.rangeChanged.emit(len(layers))
 
-        ogrSupported = ogrDatabase + ogrDirectory
-
         for layer in layers:
             layerType = layer.type()
             if layerType == QgsMapLayer.VectorLayer:
                 layerName = layer.name()
-                layerSource = layer.source()
-                pt = layer.providerType()
-                if pt == "ogr":
-                    storage = str(layer.storageType())
-                    if storage in ogrSupported:
-                        self.copyGenericVectorLayer(e, layer, layerName)
-                    elif storage in ogrProtocol:
-                        print "Storage type '%s' currently not supported" % storage
-                    else:
-                        self.copyFileLayer(e, layerSource, layerName)
-                elif pt in vectorProviders:
-                    self.copyGenericVectorLayer(e, layer, layerName)
-                else:
-                    print "Vector provider '%s' currently not supported" % pt
-            elif layerType == QgsMapLayer.RasterLayer:
-                pt = layer.providerType()
-                if pt == "gdal":
-                    self.copyRasterLayer(e, layer.source(), layer.name())
-                else:
-                    print "Raster provider '%s' currently not supported" % pt
+                # Always convert to GeoPackage
+                self.copyGenericVectorLayer(e, layer, layerName)
             else:
                 print "Layers with type '%s' currently not supported" % layerType
 
@@ -193,28 +140,12 @@ class ConsolidateThread(QThread):
         doc.save(out, 4)
         f.close()
 
-    def copyFileLayer(self, layerElement, layerSource, layerName):
-        # copy all files
-        fi = QFileInfo(layerSource)
-        mask = fi.path() + "/" + fi.baseName() + ".*"
-        files = glob.glob(unicode(mask))
-        fl = QFile()
-        for f in files:
-            fi.setFile(f)
-            fl.setFileName(f)
-            fl.copy(self.layersDir + "/" + fi.fileName())
-
-        # update project
-        layerNode = self.findLayerInProject(layerElement, layerName)
-        sourceNode = layerNode.firstChildElement("datasource")
-        p = "./layers/" + QFileInfo(sourceNode.text()).fileName()
-        sourceNode.firstChild().setNodeValue(p)
-
     def copyGenericVectorLayer(self, layerElement, vLayer, layerName):
         crs = vLayer.crs()
         enc = vLayer.dataProvider().encoding()
-        outFile = "%s/%s.shp" % (self.layersDir, layerName)
-        error = QgsVectorFileWriter.writeAsVectorFormat(vLayer, outFile, enc, crs)
+        outFile = "%s/%s.gpkg" % (self.layersDir, layerName)
+        error = QgsVectorFileWriter.writeAsVectorFormat(vLayer, outFile, enc,
+                                                        crs, 'GPKG')
         if error != QgsVectorFileWriter.NoError:
             msg = self.tr("Cannot copy layer %s") % layerName
             self.processError.emit(msg)
@@ -223,66 +154,11 @@ class ConsolidateThread(QThread):
         # update project
         layerNode = self.findLayerInProject(layerElement, layerName)
         tmpNode = layerNode.firstChildElement("datasource")
-        p = "./layers/%s.shp" % layerName
+        p = "./layers/%s.gpkg" % layerName
         tmpNode.firstChild().setNodeValue(p)
         tmpNode = layerNode.firstChildElement("provider")
         tmpNode.setAttribute("encoding", enc)
         tmpNode.firstChild().setNodeValue("ogr")
-
-    def copyRasterLayer(self, layerElement, layerPath, layerName):
-        outputFormat = "GTiff"
-        creationOptions = ["COMPRESS=PACKBITS", "TILED=YES", "TFW=YES", "BIGTIFF=IF_NEEDED"]
-
-        driver = gdal.GetDriverByName(outputFormat)
-        if driver is None:
-            print "Format driver %s not found." % outputFormat
-            return
-
-        metadata = driver.GetMetadata()
-        if "DCAP_CREATE" not in metadata:
-            print "Format driver %s does not support creation and piecewise writing" % outputFormat
-            return
-
-        # open source raster
-        src = gdal.Open(unicode(layerPath))
-        if src is None:
-            print "Unable to open file", layerPath
-            return
-
-        # extract some metadata from source raster
-        width = src.RasterXSize
-        height = src.RasterYSize
-        bands = src.RasterCount
-        dataType = src.GetRasterBand(1).DataType
-        crs = src.GetProjection()
-        geoTransform = src.GetGeoTransform()
-
-        # copy raster
-        dstFilename = unicode("%s/%s.tif" % (self.layersDir, layerName))
-        dst = driver.Create(dstFilename, width, height, bands, dataType, creationOptions)
-        if dst is None:
-            print "Creation failed"
-            return
-
-        dst.SetProjection(crs)
-        dst.SetGeoTransform(geoTransform)
-
-        # copy data from source file into output file
-        for i in xrange(1, bands + 1):
-            sBand = src.GetRasterBand(i)
-            dBand = dst.GetRasterBand(i)
-
-            data = sBand.ReadRaster(0, 0, width, height, width, height, dataType)
-            dBand.WriteRaster(0, 0, width, height, data, width, height, dataType)
-
-        src = None
-        dst = None
-
-        # update project
-        layerNode = self.findLayerInProject(layerElement, layerName)
-        tmpNode = layerNode.firstChildElement("datasource")
-        p = "./layers/%s.tif" % layerName
-        tmpNode.firstChild().setNodeValue(p)
 
     def findLayerInProject(self, layerElement, layerName):
         child = layerElement.firstChildElement()
