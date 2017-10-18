@@ -1,20 +1,20 @@
 [general]
-name=QConsolidate
-description=Consolidate QGIS project into one directory
+name=oq-onsolidate
+description=QConsolidate for OpenQuake
 category=Plugins
-version=0.2.0
+version=0.1.0
 qgisMinimumVersion=2.0
 
-author=Alexander Bruy
-email=alexander.bruy@gmail.com
+author=GEM Foundation
+email=devops@openquake.org
 
 icon=icons/qconsolidate.png
 
-tags=project,consolidate
+tags=openquake
 
-homepage=http://hub.qgis.org/projects/qconsolidate/wiki
-tracker=http://hub.qgis.org/projects/qconsolidate/issues
-repository=http://github.com/alexbruy/qconsolidate
+homepage=https://github.com/gem/oq-consolidate/
+tracker=https://github.com/gem/oq-consolidate/issues
+repository=https://github.com/gem/oq-consolidate/
 
 experimental=True
 deprecated=False
