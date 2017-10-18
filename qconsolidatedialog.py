@@ -26,6 +26,7 @@
 #
 #******************************************************************************
 
+import os
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -91,9 +92,16 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
 
         # copy project file
         projectFile = QgsProject.instance().fileName()
-        f = QFile(projectFile)
-        newProjectFile = outputDir + "/" + QFileInfo(projectFile).fileName()
-        f.copy(newProjectFile)
+        if projectFile:
+            f = QFile(projectFile)
+            newProjectFile = os.path.join(outputDir,
+                                          QFileInfo(projectFile).fileName())
+            f.copy(newProjectFile)
+        else:
+            newProjectFile = os.path.join(outputDir, 'project.qgs')
+            f = QFileInfo(newProjectFile)
+            p = QgsProject.instance()
+            p.write(f)
 
         # start consolidate thread that does all real work
         self.workThread = consolidatethread.ConsolidateThread(self.iface, outputDir, newProjectFile)
