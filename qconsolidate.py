@@ -69,25 +69,25 @@ class QConsolidatePlugin:
     def initGui(self):
         if int(self.qgsVersion) < 20000:
             qgisVersion = self.qgsVersion[0] + "." + self.qgsVersion[2] + "." + self.qgsVersion[3]
-            QMessageBox.warning(self.iface.mainWindow(), "QConsolidate",
-                                QCoreApplication.translate("QConsolidate", "QGIS %s detected.\n") % (qgisVersion) +
-                                QCoreApplication.translate("QConsolidate", "This version of QConsolidate requires at least QGIS version 2.0.\nPlugin will not be enabled."))
+            QMessageBox.warning(self.iface.mainWindow(), "OQ-Consolidate",
+                                QCoreApplication.translate("OQ-Consolidate", "QGIS %s detected.\n") % (qgisVersion) +
+                                QCoreApplication.translate("OQ-Consolidate", "This version of OQ-Consolidate requires at least QGIS version 2.0.\nPlugin will not be enabled."))
             return None
 
-        self.actionRun = QAction(QIcon(":/icons/qconsolidate.png"), "QConsolidate", self.iface.mainWindow())
-        self.actionRun.setStatusTip(QCoreApplication.translate("QConsolidate", "Consolidates all layers from current QGIS project into one directory"))
-        self.actionAbout = QAction(QIcon(":/icons/about.png"), "About QConsolidate", self.iface.mainWindow())
+        self.actionRun = QAction(QIcon(":/icons/qconsolidate.png"), "OQ-Consolidate", self.iface.mainWindow())
+        self.actionRun.setStatusTip(QCoreApplication.translate("OQ-Consolidate", "Consolidates all layers from current QGIS project into one directory"))
+        self.actionAbout = QAction(QIcon(":/icons/about.png"), "About OQ-Consolidate", self.iface.mainWindow())
 
         self.actionRun.triggered.connect(self.run)
         self.actionAbout.triggered.connect(self.about)
 
-        self.iface.addPluginToMenu(QCoreApplication.translate("QConsolidate", "QConsolidate"), self.actionRun)
-        self.iface.addPluginToMenu(QCoreApplication.translate("QConsolidate", "QConsolidate"), self.actionAbout)
+        self.iface.addPluginToMenu(QCoreApplication.translate("OQ-Consolidate", "OQ-Consolidate"), self.actionRun)
+        self.iface.addPluginToMenu(QCoreApplication.translate("OQ-Consolidate", "OQ-Consolidate"), self.actionAbout)
         self.iface.addToolBarIcon(self.actionRun)
 
     def unload(self):
-        self.iface.removePluginMenu(QCoreApplication.translate("QConsolidate", "QConsolidate"), self.actionRun)
-        self.iface.removePluginMenu(QCoreApplication.translate("QConsolidate", "QConsolidate"), self.actionAbout)
+        self.iface.removePluginMenu(QCoreApplication.translate("OQ-Consolidate", "OQ-Consolidate"), self.actionRun)
+        self.iface.removePluginMenu(QCoreApplication.translate("OQ-Consolidate", "OQ-Consolidate"), self.actionAbout)
         self.iface.removeToolBarIcon(self.actionRun)
 
     def run(self):
