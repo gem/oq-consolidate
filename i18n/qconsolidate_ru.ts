@@ -73,8 +73,8 @@
     <name>Dialog</name>
     <message>
         <location filename="ui/aboutdialogbase.ui" line="14"/>
-        <source>About QConsolidate</source>
-        <translation type="unfinished">О QConsolidate</translation>
+        <source>About OQ-Consolidate</source>
+        <translation type="unfinished">ОQ-Consolidate</translation>
     </message>
     <message>
         <location filename="ui/aboutdialogbase.ui" line="44"/>
@@ -87,7 +87,7 @@
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Droid Sans&apos;; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:16pt; font-weight:600;&quot;&gt;QConsolidate&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:16pt; font-weight:600;&quot;&gt;OQ-Consolidate&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -101,7 +101,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>QConsolidate</name>
+    <name>OQ-Consolidate</name>
     <message>
         <location filename="qconsolidate.py" line="74"/>
         <source>Quantum GIS version detected: </source>
@@ -109,18 +109,18 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="qconsolidate.py" line="90"/>
-        <source>QConsolidate</source>
-        <translation>QConsolidate</translation>
+        <source>OQ-Consolidate</source>
+        <translation>OQ-Consolidate</translation>
     </message>
     <message>
         <location filename="qconsolidate.py" line="97"/>
-        <source>About QConsolidate</source>
-        <translation type="obsolete">О QConsolidate</translation>
+        <source>About OQ-Consolidate</source>
+        <translation type="obsolete">OQ-Consolidate</translation>
     </message>
     <message>
         <location filename="qconsolidate.py" line="99"/>
-        <source>&lt;b&gt;QConsolidate&lt;/b&gt;</source>
-        <translation type="obsolete">&lt;b&gt;QConsolidate&lt;/b&gt;</translation>
+        <source>&lt;b&gt;OQ-Consolidate&lt;/b&gt;</source>
+        <translation type="obsolete">&lt;b&gt;OQ-Consolidate&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="qconsolidate.py" line="102"/>
@@ -144,9 +144,9 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="qconsolidate.py" line="74"/>
-        <source>This version of QConsolidate requires at least QGIS version 1.8.0
+        <source>This version of OQ-Consolidate requires at least QGIS version 1.8.0
 Plugin will not be enabled.</source>
-        <translation type="obsolete">Эта версия QConsolidate требует QGIS 1.8.0 или старше
+        <translation type="obsolete">Эта версия OQ-Consolidate требует QGIS 1.8.0 или старше
 Модуль не будет загружен.</translation>
     </message>
     <message>
@@ -168,7 +168,7 @@ into one directory</source>
     </message>
     <message>
         <location filename="qconsolidate.py" line="72"/>
-        <source>This version of QConsolidate requires at least QGIS version 2.0.
+        <source>This version of OQ-Consolidate requires at least QGIS version 2.0.
 Plugin will not be enabled.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -177,8 +177,8 @@ Plugin will not be enabled.</source>
     <name>QConsolidateDialog</name>
     <message>
         <location filename="ui/qconsolidatedialogbase.ui" line="14"/>
-        <source>QConsolidate</source>
-        <translation>QConsolidate</translation>
+        <source>OQ-Consolidate</source>
+        <translation>OQ-Consolidate</translation>
     </message>
     <message>
         <location filename="ui/qconsolidatedialogbase.ui" line="20"/>
@@ -197,8 +197,8 @@ Plugin will not be enabled.</source>
     </message>
     <message>
         <location filename="qconsolidatedialog.py" line="130"/>
-        <source>QConsolidate: Error</source>
-        <translation>QConsolidate: Ошибка</translation>
+        <source>OQ-Consolidate: Error</source>
+        <translation>OQ-Consolidate: Ошибка</translation>
     </message>
     <message>
         <location filename="qconsolidatedialog.py" line="67"/>

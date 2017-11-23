@@ -27,7 +27,7 @@ lang: $(LANG_FILES)
 res: $(RES_FILES)
 
 $(UI_FILES): $(UI_PATH)/ui_%.py: $(UI_PATH)/%.ui
-	pyuic4 -o $@ $<
+	pyuic4 -d -o $@ $<
 
 $(LANG_FILES): $(LANG_PATH)/%.qm: $(LANG_PATH)/%.ts
 	lrelease $<
