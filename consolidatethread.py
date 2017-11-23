@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
-#******************************************************************************
+# *****************************************************************************
 #
-# QConsolidate
+# oq-consolidate
 # ---------------------------------------------------------
-# Consolidates all layers from current QGIS project into one directory and
-# creates copy of current project using this consolidated layers.
+# Consolidates some layers from current QGIS project into one directory and
+# creates copy of current project using gpkg and xml consolidated layers.
 #
+# Copyright (C) 2017 GEM Foundation (devops@openquake.org)
 # Copyright (C) 2012-2013 Alexander Bruy (alexander.bruy@gmail.com)
 #
 # This source is free software; you can redistribute it and/or modify it under
@@ -24,9 +25,7 @@
 # to the Free Software Foundation, 51 Franklin Street, Suite 500 Boston,
 # MA 02110-1335 USA.
 #
-#******************************************************************************
-
-
+# *****************************************************************************
 
 from shutil import copyfile
 
@@ -38,8 +37,6 @@ from qgis.core import *
 from qgis.gui import *
 
 from osgeo import gdal
-
-import glob
 
 
 class ConsolidateThread(QThread):
@@ -74,7 +71,8 @@ class ConsolidateThread(QThread):
 
         # ensure that relative path used
         e = root.firstChildElement("properties")
-        e.firstChildElement("Paths").firstChild().firstChild().setNodeValue("false")
+        (e.firstChildElement("Paths").firstChild()
+         .firstChild().setNodeValue("false"))
 
         # get layers section in project
         e = root.firstChildElement("projectlayers")
@@ -91,10 +89,11 @@ class ConsolidateThread(QThread):
                 # Always convert to GeoPackage
                 self.convertGenericVectorLayer(e, layer, layerName)
             elif (layerType == QgsMapLayer.RasterLayer
-                   and layerUri.endswith('.xml')):
+                  and layerUri.endswith('.xml')):
                 self.copyXmlRasterLayer(e, layer, layerName)
             else:
-                print "Layers with type '%s' currently not supported" % layerType
+                print("Layers with type '%s' currently not supported"
+                      % layerType)
 
             self.updateProgress.emit()
             self.mutex.lock()
@@ -122,14 +121,16 @@ class ConsolidateThread(QThread):
     def loadProject(self):
         f = QFile(self.projectFile)
         if not f.open(QIODevice.ReadOnly | QIODevice.Text):
-            msg = self.tr("Cannot read file %s:\n%s.") % (self.projectFile, f.errorString())
+            msg = self.tr("Cannot read file %s:\n%s.") % (self.projectFile,
+                                                          f.errorString())
             self.processError.emit(msg)
             return
 
         doc = QDomDocument()
         setOk, errorString, errorLine, errorColumn = doc.setContent(f, True)
         if not setOk:
-            msg = self.tr("Parse error at line %d, column %d:\n%s") % (errorLine, errorColumn, errorString)
+            msg = (self.tr("Parse error at line %d, column %d:\n%s")
+                   % (errorLine, errorColumn, errorString))
             self.processError.emit(msg)
             return
 
@@ -139,7 +140,8 @@ class ConsolidateThread(QThread):
     def saveProject(self, doc):
         f = QFile(self.projectFile)
         if not f.open(QIODevice.WriteOnly | QIODevice.Text):
-            msg = self.tr("Cannot write file %s:\n%s.") % (self.projectFile, f.errorString())
+            msg = self.tr("Cannot write file %s:\n%s.") % (self.projectFile,
+                                                           f.errorString())
             self.processError.emit(msg)
             return
 
@@ -148,7 +150,6 @@ class ConsolidateThread(QThread):
         f.close()
 
     def copyXmlRasterLayer(self, layerElement, vLayer, layerName):
-        
         outFile = "%s/%s.xml" % (self.layersDir, layerName)
         try:
             copyfile(vLayer.dataProvider().dataSourceUri(), outFile)
