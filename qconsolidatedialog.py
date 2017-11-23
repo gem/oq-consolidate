@@ -47,6 +47,11 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
 
         self.workThread = None
 
+        self.project_name_lbl = QLabel("Project name")
+        self.project_name_le = QLineEdit("project")
+        self.layout().addWidget(self.project_name_lbl)
+        self.layout().addWidget(self.project_name_le)
+
         self.btnOk = self.buttonBox.button(QDialogButtonBox.Ok)
         self.btnClose = self.buttonBox.button(QDialogButtonBox.Close)
 
@@ -63,6 +68,14 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         self.leOutputDir.setText(outDir)
 
     def accept(self):
+        project_name = self.project_name_le.text()
+        if not project_name:
+            QMessageBox.warning(self,
+                                self.tr("QConsolidate: Error"),
+                                self.tr("The project name is not set. Please specify it.")
+                               )
+            return
+
         outputDir = self.leOutputDir.text()
         if not outputDir:
             QMessageBox.warning(self,
@@ -98,7 +111,7 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
                                           QFileInfo(projectFile).fileName())
             f.copy(newProjectFile)
         else:
-            newProjectFile = os.path.join(outputDir, 'project.qgs')
+            newProjectFile = os.path.join(outputDir, '%s.qgs' % project_name)
             f = QFileInfo(newProjectFile)
             p = QgsProject.instance()
             p.write(f)
