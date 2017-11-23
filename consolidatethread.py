@@ -27,6 +27,9 @@
 #******************************************************************************
 
 
+
+from shutil import copyfile
+
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from PyQt4.QtXml import *
@@ -82,10 +85,14 @@ class ConsolidateThread(QThread):
 
         for layer in layers:
             layerType = layer.type()
+            layerName = layer.name()
+            layerUri = layer.dataProvider().dataSourceUri()
             if layerType == QgsMapLayer.VectorLayer:
-                layerName = layer.name()
                 # Always convert to GeoPackage
-                self.copyGenericVectorLayer(e, layer, layerName)
+                self.convertGenericVectorLayer(e, layer, layerName)
+            elif (layerType == QgsMapLayer.RasterLayer
+                   and layerUri.endswith('.xml')):
+                self.copyXmlRasterLayer(e, layer, layerName)
             else:
                 print "Layers with type '%s' currently not supported" % layerType
 
@@ -140,7 +147,25 @@ class ConsolidateThread(QThread):
         doc.save(out, 4)
         f.close()
 
-    def copyGenericVectorLayer(self, layerElement, vLayer, layerName):
+    def copyXmlRasterLayer(self, layerElement, vLayer, layerName):
+        
+        outFile = "%s/%s.xml" % (self.layersDir, layerName)
+        try:
+            copyfile(vLayer.dataProvider().dataSourceUri(), outFile)
+        except IOError:
+            msg = self.tr("Cannot copy layer %s") % layerName
+            self.processError.emit(msg)
+            return
+
+        # update project
+        layerNode = self.findLayerInProject(layerElement, layerName)
+        tmpNode = layerNode.firstChildElement("datasource")
+        p = "./layers/%s.xml" % layerName
+        tmpNode.firstChild().setNodeValue(p)
+        tmpNode = layerNode.firstChildElement("provider")
+        tmpNode.firstChild().setNodeValue("gdal")
+
+    def convertGenericVectorLayer(self, layerElement, vLayer, layerName):
         crs = vLayer.crs()
         enc = vLayer.dataProvider().encoding()
         outFile = "%s/%s.gpkg" % (self.layersDir, layerName)
