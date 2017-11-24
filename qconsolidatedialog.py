@@ -48,9 +48,30 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         self.workThread = None
 
         self.btnOk = self.buttonBox.button(QDialogButtonBox.Ok)
+        self.btnOk.setEnabled(False)
         self.btnClose = self.buttonBox.button(QDialogButtonBox.Close)
 
+        self.project_name_lbl = QLabel("Project name")
+        self.project_name_le = QLineEdit()
+        self.project_name_le.textChanged.connect(
+            self.set_ok_button)
+
+        project_name = self.get_project_name()
+        if project_name:
+            self.project_name_le.setText(project_name)
+
+        self.layout().addWidget(self.project_name_lbl)
+        self.layout().addWidget(self.project_name_le)
+
+
         self.btnBrowse.clicked.connect(self.setOutDirectory)
+
+    def get_project_name(self):
+        prjfi = QFileInfo(QgsProject.instance().fileName())
+        return prjfi.baseName()
+
+    def set_ok_button(self):
+        self.btnOk.setEnabled(bool(self.project_name_le.text()))
 
     def setOutDirectory(self):
         outDir = QFileDialog.getExistingDirectory(self,
@@ -63,6 +84,16 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         self.leOutputDir.setText(outDir)
 
     def accept(self):
+        project_name = self.project_name_le.text()
+        if project_name.endswith('.qgs'):
+            project_name = project_name[:-4]
+        if not project_name:
+            QMessageBox.warning(self,
+                                self.tr("QConsolidate: Error"),
+                                self.tr("The project name is not set. Please specify it.")
+                               )
+            return
+
         outputDir = self.leOutputDir.text()
         if not outputDir:
             QMessageBox.warning(self,
@@ -95,10 +126,10 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         if projectFile:
             f = QFile(projectFile)
             newProjectFile = os.path.join(outputDir,
-                                          QFileInfo(projectFile).fileName())
+                                          '%s.qgs' % project_name)
             f.copy(newProjectFile)
         else:
-            newProjectFile = os.path.join(outputDir, 'project.qgs')
+            newProjectFile = os.path.join(outputDir, '%s.qgs' % project_name)
             f = QFileInfo(newProjectFile)
             p = QgsProject.instance()
             p.write(f)
