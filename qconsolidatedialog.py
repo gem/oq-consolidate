@@ -27,6 +27,7 @@
 #******************************************************************************
 
 import os
+import re
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -54,7 +55,7 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         self.project_name_lbl = QLabel("Project name")
         self.project_name_le = QLineEdit()
         self.project_name_le.textChanged.connect(
-            self.set_ok_button)
+            self.on_project_name_changed)
 
         project_name = self.get_project_name()
         if project_name:
@@ -65,6 +66,11 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
 
 
         self.btnBrowse.clicked.connect(self.setOutDirectory)
+
+    def on_project_name_changed(self):
+        self.project_name_le.setText(
+            get_valid_filename(self.project_name_le.text()))
+        self.set_ok_button()
 
     def get_project_name(self):
         prjfi = QFileInfo(QgsProject.instance().fileName())
@@ -186,3 +192,16 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         self.buttonBox.rejected.connect(self.reject)
         self.btnClose.setText(self.tr("Close"))
         self.btnOk.setEnabled(True)
+
+# from https://github.com/django/django/blob/master/django/utils/text.py#L223
+def get_valid_filename(s):
+    """
+    Return the given string converted to a string that can be used for a clean
+    filename. Remove leading and trailing spaces; convert other spaces to
+    underscores; and remove anything that is not an alphanumeric, dash,
+    underscore, or dot.
+    >>> get_valid_filename("john's portrait in 2004.jpg")
+    'johns_portrait_in_2004.jpg'
+    """
+    s = str(s).strip().replace(' ', '_')
+    return re.sub(r'(?u)[^-\w.]', '', s)
