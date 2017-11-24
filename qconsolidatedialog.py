@@ -54,6 +54,8 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
 
         self.project_name_le.textChanged.connect(
             self.on_project_name_changed)
+        self.leOutputDir.textChanged.connect(
+            self.set_ok_button)
 
         project_name = self.get_project_name()
         if project_name:
@@ -71,7 +73,8 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         return prjfi.baseName()
 
     def set_ok_button(self):
-        self.btnOk.setEnabled(bool(self.project_name_le.text()))
+        self.btnOk.setEnabled(bool(self.project_name_le.text()) and
+                              bool(self.leOutputDir.text()))
 
     def setOutDirectory(self):
         outDir = QFileDialog.getExistingDirectory(self,
@@ -143,6 +146,7 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         self.workThread.processError.connect(self.processError)
 
         self.btnClose.setText(self.tr("Cancel"))
+        self.btnOk.setEnabled(False)
         self.buttonBox.rejected.disconnect(self.reject)
         self.btnClose.clicked.connect(self.stopProcessing)
 
@@ -185,7 +189,7 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         QApplication.restoreOverrideCursor()
         self.buttonBox.rejected.connect(self.reject)
         self.btnClose.setText(self.tr("Close"))
-        self.btnOk.setEnabled(True)
+        self.set_ok_button()
 
 # from https://github.com/django/django/blob/master/django/utils/text.py#L223
 def get_valid_filename(s):
