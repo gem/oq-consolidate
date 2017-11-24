@@ -51,18 +51,12 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         self.btnOk.setEnabled(False)
         self.btnClose = self.buttonBox.button(QDialogButtonBox.Close)
 
-        self.project_name_lbl = QLabel("Project name")
-        self.project_name_le = QLineEdit()
         self.project_name_le.textChanged.connect(
             self.set_ok_button)
 
         project_name = self.get_project_name()
         if project_name:
             self.project_name_le.setText(project_name)
-
-        self.layout().addWidget(self.project_name_lbl)
-        self.layout().addWidget(self.project_name_le)
-
 
         self.btnBrowse.clicked.connect(self.setOutDirectory)
 
