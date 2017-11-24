@@ -89,7 +89,7 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
             project_name = project_name[:-4]
         if not project_name:
             QMessageBox.warning(self,
-                                self.tr("QConsolidate: Error"),
+                                self.tr("OQ-Consolidate: Error"),
                                 self.tr("The project name is not set. Please specify it.")
                                )
             return
@@ -97,7 +97,7 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         outputDir = self.leOutputDir.text()
         if not outputDir:
             QMessageBox.warning(self,
-                                self.tr("QConsolidate: Error"),
+                                self.tr("OQ-Consolidate: Error"),
                                 self.tr("Output directory is not set. Please specify output directory.")
                                )
             return
@@ -116,7 +116,7 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         else:
             if not d.mkdir("layers"):
                 QMessageBox.warning(self,
-                                    self.tr("QConsolidate: Error"),
+                                    self.tr("OQ-Consolidate: Error"),
                                     self.tr("Can't create directory for layers.")
                                    )
                 return
@@ -167,7 +167,7 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
 
     def processError(self, message):
         QMessageBox.warning(self,
-                            self.tr("QConsolidate: Error"),
+                            self.tr("OQ-Consolidate: Error"),
                             message
                            )
         self.restoreGui()

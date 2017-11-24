@@ -82,20 +82,21 @@ class ConsolidateThread(QThread):
         self.rangeChanged.emit(len(layers))
 
         for layer in layers:
-            layerType = layer.type()
-            layerName = layer.name()
-            layerUri = layer.dataProvider().dataSourceUri()
             if not layer.isValid():
                 print("Layer %s is invalid" % layer.name())
-            elif layerType == QgsMapLayer.VectorLayer:
-                # Always convert to GeoPackage
-                self.convertGenericVectorLayer(e, layer, layerName)
-            elif (layerType == QgsMapLayer.RasterLayer
-                  and self.checkIfWms(layerUri)):
-                self.copyXmlRasterLayer(e, layer, layerName)
             else:
-                print("Layers with type '%s' currently not supported"
-                      % layerType)
+                layerType = layer.type()
+                layerName = layer.name()
+                layerUri = layer.dataProvider().dataSourceUri()
+                if layerType == QgsMapLayer.VectorLayer:
+                    # Always convert to GeoPackage
+                    self.convertGenericVectorLayer(e, layer, layerName)
+                elif (layerType == QgsMapLayer.RasterLayer
+                      and self.checkIfWms(layerUri)):
+                    self.copyXmlRasterLayer(e, layer, layerName)
+                else:
+                    print("Layers with type '%s' currently not supported"
+                          % layerType)
 
             self.updateProgress.emit()
             self.mutex.lock()
