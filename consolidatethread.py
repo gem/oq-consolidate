@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
-#******************************************************************************
+# *****************************************************************************
 #
-# QConsolidate
+# oq-consolidate
 # ---------------------------------------------------------
-# Consolidates all layers from current QGIS project into one directory and
-# creates copy of current project using this consolidated layers.
+# Consolidates some layers from current QGIS project into one directory and
+# creates copy of current project using gpkg and xml consolidated layers.
 #
+# Copyright (C) 2017 GEM Foundation (devops@openquake.org)
 # Copyright (C) 2012-2013 Alexander Bruy (alexander.bruy@gmail.com)
 #
 # This source is free software; you can redistribute it and/or modify it under
@@ -24,8 +25,9 @@
 # to the Free Software Foundation, 51 Franklin Street, Suite 500 Boston,
 # MA 02110-1335 USA.
 #
-#******************************************************************************
+# *****************************************************************************
 
+from shutil import copyfile
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -35,8 +37,6 @@ from qgis.core import *
 from qgis.gui import *
 
 from osgeo import gdal
-
-import glob
 
 
 class ConsolidateThread(QThread):
@@ -71,7 +71,8 @@ class ConsolidateThread(QThread):
 
         # ensure that relative path used
         e = root.firstChildElement("properties")
-        e.firstChildElement("Paths").firstChild().firstChild().setNodeValue("false")
+        (e.firstChildElement("Paths").firstChild()
+         .firstChild().setNodeValue("false"))
 
         # get layers section in project
         e = root.firstChildElement("projectlayers")
@@ -81,13 +82,21 @@ class ConsolidateThread(QThread):
         self.rangeChanged.emit(len(layers))
 
         for layer in layers:
-            layerType = layer.type()
-            if layerType == QgsMapLayer.VectorLayer:
-                layerName = layer.name()
-                # Always convert to GeoPackage
-                self.copyGenericVectorLayer(e, layer, layerName)
+            if not layer.isValid():
+                print("Layer %s is invalid" % layer.name())
             else:
-                print "Layers with type '%s' currently not supported" % layerType
+                layerType = layer.type()
+                layerName = layer.name()
+                layerUri = layer.dataProvider().dataSourceUri()
+                if layerType == QgsMapLayer.VectorLayer:
+                    # Always convert to GeoPackage
+                    self.convertGenericVectorLayer(e, layer, layerName)
+                elif (layerType == QgsMapLayer.RasterLayer
+                      and self.checkIfWms(layerUri)):
+                    self.copyXmlRasterLayer(e, layer, layerName)
+                else:
+                    print("Layers with type '%s' currently not supported"
+                          % layerType)
 
             self.updateProgress.emit()
             self.mutex.lock()
@@ -115,14 +124,16 @@ class ConsolidateThread(QThread):
     def loadProject(self):
         f = QFile(self.projectFile)
         if not f.open(QIODevice.ReadOnly | QIODevice.Text):
-            msg = self.tr("Cannot read file %s:\n%s.") % (self.projectFile, f.errorString())
+            msg = self.tr("Cannot read file %s:\n%s.") % (self.projectFile,
+                                                          f.errorString())
             self.processError.emit(msg)
             return
 
         doc = QDomDocument()
         setOk, errorString, errorLine, errorColumn = doc.setContent(f, True)
         if not setOk:
-            msg = self.tr("Parse error at line %d, column %d:\n%s") % (errorLine, errorColumn, errorString)
+            msg = (self.tr("Parse error at line %d, column %d:\n%s")
+                   % (errorLine, errorColumn, errorString))
             self.processError.emit(msg)
             return
 
@@ -132,7 +143,8 @@ class ConsolidateThread(QThread):
     def saveProject(self, doc):
         f = QFile(self.projectFile)
         if not f.open(QIODevice.WriteOnly | QIODevice.Text):
-            msg = self.tr("Cannot write file %s:\n%s.") % (self.projectFile, f.errorString())
+            msg = self.tr("Cannot write file %s:\n%s.") % (self.projectFile,
+                                                           f.errorString())
             self.processError.emit(msg)
             return
 
@@ -140,7 +152,24 @@ class ConsolidateThread(QThread):
         doc.save(out, 4)
         f.close()
 
-    def copyGenericVectorLayer(self, layerElement, vLayer, layerName):
+    def copyXmlRasterLayer(self, layerElement, vLayer, layerName):
+        outFile = "%s/%s.xml" % (self.layersDir, layerName)
+        try:
+            copyfile(vLayer.dataProvider().dataSourceUri(), outFile)
+        except IOError:
+            msg = self.tr("Cannot copy layer %s") % layerName
+            self.processError.emit(msg)
+            return
+
+        # update project
+        layerNode = self.findLayerInProject(layerElement, layerName)
+        tmpNode = layerNode.firstChildElement("datasource")
+        p = "./layers/%s.xml" % layerName
+        tmpNode.firstChild().setNodeValue(p)
+        tmpNode = layerNode.firstChildElement("provider")
+        tmpNode.firstChild().setNodeValue("gdal")
+
+    def convertGenericVectorLayer(self, layerElement, vLayer, layerName):
         crs = vLayer.crs()
         enc = vLayer.dataProvider().encoding()
         outFile = "%s/%s.gpkg" % (self.layersDir, layerName)
@@ -168,3 +197,10 @@ class ConsolidateThread(QThread):
                 return child
             child = child.nextSiblingElement()
         return None
+
+    def checkIfWms(self, layer):
+        ds = gdal.Open(layer, gdal.GA_ReadOnly)
+        is_wms = (True if ds.GetDriver().ShortName == "WMS" else False)
+        del ds
+
+        return is_wms
