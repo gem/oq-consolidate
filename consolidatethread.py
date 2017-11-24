@@ -85,11 +85,13 @@ class ConsolidateThread(QThread):
             layerType = layer.type()
             layerName = layer.name()
             layerUri = layer.dataProvider().dataSourceUri()
-            if layerType == QgsMapLayer.VectorLayer:
+            if not layer.isValid():
+                print("Layer %s is invalid" % layer.name())
+            elif layerType == QgsMapLayer.VectorLayer:
                 # Always convert to GeoPackage
                 self.convertGenericVectorLayer(e, layer, layerName)
             elif (layerType == QgsMapLayer.RasterLayer
-                  and layerUri.endswith('.xml')):
+                  and self.checkIfWms(layerUri)):
                 self.copyXmlRasterLayer(e, layer, layerName)
             else:
                 print("Layers with type '%s' currently not supported"
@@ -194,3 +196,10 @@ class ConsolidateThread(QThread):
                 return child
             child = child.nextSiblingElement()
         return None
+
+    def checkIfWms(self, layer):
+        ds = gdal.Open(layer, gdal.GA_ReadOnly)
+        is_wms = (True if ds.GetDriver().ShortName == "WMS" else False)
+        del ds
+
+        return is_wms
