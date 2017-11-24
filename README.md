@@ -1,6 +1,6 @@
-## oq-consolidate
+## OQ-Consolidate
 
-oq-consolidate is a simplified version of [QConsolidate](https://github.com/alexbruy/qconsolidate):
+OQ-Consolidate is a simplified version of [QConsolidate](https://github.com/alexbruy/qconsolidate):
 
 - supports only vector layers (by design)
 - always converts data in GeoPackage format
