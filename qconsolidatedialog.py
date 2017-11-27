@@ -64,8 +64,12 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         self.btnBrowse.clicked.connect(self.setOutDirectory)
 
     def on_project_name_changed(self):
-        self.project_name_le.setText(
-            get_valid_filename(self.project_name_le.text()))
+        try:
+            valid_filename = get_valid_filename(self.project_name_le.text())
+        except UnicodeEncodeError:
+            self.project_name_le.undo()
+        else:
+            self.project_name_le.setText(valid_filename)
         self.set_ok_button()
 
     def get_project_name(self):
