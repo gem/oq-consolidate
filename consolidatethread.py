@@ -27,7 +27,7 @@
 #
 # *****************************************************************************
 
-from shutil import copyfile
+import os
 import zipfile
 
 from PyQt4.QtCore import *
@@ -38,6 +38,7 @@ from qgis.core import *
 from qgis.gui import *
 
 from osgeo import gdal
+from shutil import copyfile
 
 
 class ConsolidateThread(QThread):
@@ -118,7 +119,7 @@ class ConsolidateThread(QThread):
         self.saveProject(doc)
 
         if self.saveToZip:
-            self.save_to_zip(outFiles)
+            self.zipfiles(outFiles, self.projectFile[:-4])
 
         if not interrupted:
             self.processFinished.emit()
@@ -163,12 +164,18 @@ class ConsolidateThread(QThread):
         doc.save(out, 4)
         f.close()
 
-    def save_to_zip(self, file_paths):
-        # strip .qgs from the project file name
-        zipped_file_name = "%s.zip" % self.projectFile[:-4]
-        with zipfile.ZipFile(zipped_file_name, 'w') as zipped_file:
-            for file_path in file_paths:
-                zipped_file.write(file_path)
+    def zipfiles(self, file_paths, archive):
+        """
+        Build a zip archive from the given file names.
+        :param file_paths: list of path names
+        :param archive: path of the archive
+        """
+        prefix = len(
+            os.path.commonprefix([os.path.dirname(f) for f in file_paths]))
+        with zipfile.ZipFile(
+                archive, 'w', zipfile.ZIP_DEFLATED, allowZip64=True) as z:
+            for f in file_paths:
+                z.write(f, f[prefix:])
 
     def copyXmlRasterLayer(self, layerElement, vLayer, layerName):
         outFile = "%s/%s.xml" % (self.layersDir, layerName)
