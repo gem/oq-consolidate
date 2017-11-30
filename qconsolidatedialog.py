@@ -52,10 +52,10 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         self.btnOk.setEnabled(False)
         self.btnClose = self.buttonBox.button(QDialogButtonBox.Close)
 
-        # FIXME: delete
-        # self.project_name_lbl = QLabel('project name')
+        # FIXME: this is needed if you can't compile the UI
+        # self.project_name_lbl = QLabel('Project name')
         # self.project_name_le = QLineEdit()
-        # self.checkBoxZip = QCheckBox('Zìppalo!')
+        # self.checkBoxZip = QCheckBox('Consolidate in a Zip file')
         # self.layout().addWidget(self.project_name_lbl)
         # self.layout().addWidget(self.project_name_le)
         # self.layout().addWidget(self.checkBoxZip)
