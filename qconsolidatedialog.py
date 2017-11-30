@@ -178,6 +178,10 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
 
     def processFinished(self):
         self.stopProcessing()
+        QMessageBox.information(self,
+                                self.tr("OQ-Consolidate: Info"),
+                                'Consolidation complete.'
+                                )
         self.restoreGui()
 
     def processInterrupted(self):
