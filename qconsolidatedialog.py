@@ -52,6 +52,14 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         self.btnOk.setEnabled(False)
         self.btnClose = self.buttonBox.button(QDialogButtonBox.Close)
 
+        # FIXME: this is needed if you can't compile the UI
+        # self.project_name_lbl = QLabel('Project name')
+        # self.project_name_le = QLineEdit()
+        # self.checkBoxZip = QCheckBox('Consolidate in a Zip file')
+        # self.layout().addWidget(self.project_name_lbl)
+        # self.layout().addWidget(self.project_name_le)
+        # self.layout().addWidget(self.checkBoxZip)
+
         self.project_name_le.textChanged.connect(
             self.on_project_name_changed)
         self.leOutputDir.textChanged.connect(
@@ -142,7 +150,9 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
             p.write(f)
 
         # start consolidate thread that does all real work
-        self.workThread = consolidatethread.ConsolidateThread(self.iface, outputDir, newProjectFile)
+        self.workThread = consolidatethread.ConsolidateThread(
+            self.iface, outputDir, newProjectFile,
+            self.checkBoxZip.isChecked())
         self.workThread.rangeChanged.connect(self.setProgressRange)
         self.workThread.updateProgress.connect(self.updateProgress)
         self.workThread.processFinished.connect(self.processFinished)
@@ -168,6 +178,10 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
 
     def processFinished(self):
         self.stopProcessing()
+        QMessageBox.information(self,
+                                self.tr("OQ-Consolidate: Info"),
+                                'Consolidation complete.'
+                                )
         self.restoreGui()
 
     def processInterrupted(self):
