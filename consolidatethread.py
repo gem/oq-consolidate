@@ -170,6 +170,7 @@ class ConsolidateThread(QThread):
         :param file_paths: list of path names
         :param archive: path of the archive
         """
+        archive = "%s.zip" % archive
         prefix = len(
             os.path.commonprefix([os.path.dirname(f) for f in file_paths]))
         with zipfile.ZipFile(
