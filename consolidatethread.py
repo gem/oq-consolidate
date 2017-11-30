@@ -120,6 +120,7 @@ class ConsolidateThread(QThread):
 
         if self.saveToZip:
             self.rangeChanged.emit(len(outFiles))
+            # strip .qgis from the project name
             self.zipfiles(outFiles, self.projectFile[:-4])
 
         if not interrupted:
