@@ -119,6 +119,7 @@ class ConsolidateThread(QThread):
         self.saveProject(doc)
 
         if self.saveToZip:
+            self.rangeChanged.emit(len(outFiles))
             self.zipfiles(outFiles, self.projectFile[:-4])
 
         if not interrupted:
@@ -177,6 +178,7 @@ class ConsolidateThread(QThread):
                 archive, 'w', zipfile.ZIP_DEFLATED, allowZip64=True) as z:
             for f in file_paths:
                 z.write(f, f[prefix:])
+                self.updateProgress.emit()
 
     def copyXmlRasterLayer(self, layerElement, vLayer, layerName):
         outFile = "%s/%s.xml" % (self.layersDir, layerName)
