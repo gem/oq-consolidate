@@ -28,6 +28,7 @@
 # *****************************************************************************
 
 from shutil import copyfile
+import zipfile
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -46,7 +47,7 @@ class ConsolidateThread(QThread):
     processFinished = pyqtSignal()
     processInterrupted = pyqtSignal()
 
-    def __init__(self, iface, outputDir, projectFile):
+    def __init__(self, iface, outputDir, projectFile, saveToZip):
         QThread.__init__(self, QThread.currentThread())
         self.mutex = QMutex()
         self.stopMe = 0
@@ -55,6 +56,7 @@ class ConsolidateThread(QThread):
         self.outputDir = outputDir
         self.layersDir = outputDir + "/layers"
         self.projectFile = projectFile
+        self.saveToZip = saveToZip
 
     def run(self):
         self.mutex.lock()
@@ -81,6 +83,9 @@ class ConsolidateThread(QThread):
         layers = self.iface.legendInterface().layers()
         self.rangeChanged.emit(len(layers))
 
+        # keep full paths of exported layer files (used to zip files)
+        outFiles = [self.projectFile]
+
         for layer in layers:
             if not layer.isValid():
                 print("Layer %s is invalid" % layer.name())
@@ -90,10 +95,13 @@ class ConsolidateThread(QThread):
                 layerUri = layer.dataProvider().dataSourceUri()
                 if layerType == QgsMapLayer.VectorLayer:
                     # Always convert to GeoPackage
-                    self.convertGenericVectorLayer(e, layer, layerName)
+                    outFile = self.convertGenericVectorLayer(
+                        e, layer, layerName)
+                    outFiles.append(outFile)
                 elif (layerType == QgsMapLayer.RasterLayer
                       and self.checkIfWms(layerUri)):
-                    self.copyXmlRasterLayer(e, layer, layerName)
+                    outFile = self.copyXmlRasterLayer(e, layer, layerName)
+                    outFiles.append(outFile)
                 else:
                     print("Layers with type '%s' currently not supported"
                           % layerType)
@@ -108,6 +116,9 @@ class ConsolidateThread(QThread):
 
         # save updated project
         self.saveProject(doc)
+
+        if self.saveToZip:
+            self.save_to_zip(outFiles)
 
         if not interrupted:
             self.processFinished.emit()
@@ -152,6 +163,13 @@ class ConsolidateThread(QThread):
         doc.save(out, 4)
         f.close()
 
+    def save_to_zip(self, file_paths):
+        # strip .qgs from the project file name
+        zipped_file_name = "%s.zip" % self.projectFile[:-4]
+        with zipfile.ZipFile(zipped_file_name, 'w') as zipped_file:
+            for file_path in file_paths:
+                zipped_file.write(file_path)
+
     def copyXmlRasterLayer(self, layerElement, vLayer, layerName):
         outFile = "%s/%s.xml" % (self.layersDir, layerName)
         try:
@@ -168,6 +186,7 @@ class ConsolidateThread(QThread):
         tmpNode.firstChild().setNodeValue(p)
         tmpNode = layerNode.firstChildElement("provider")
         tmpNode.firstChild().setNodeValue("gdal")
+        return outFile
 
     def convertGenericVectorLayer(self, layerElement, vLayer, layerName):
         crs = vLayer.crs()
@@ -188,6 +207,7 @@ class ConsolidateThread(QThread):
         tmpNode = layerNode.firstChildElement("provider")
         tmpNode.setAttribute("encoding", enc)
         tmpNode.firstChild().setNodeValue("ogr")
+        return outFile
 
     def findLayerInProject(self, layerElement, layerName):
         child = layerElement.firstChildElement()

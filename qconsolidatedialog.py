@@ -52,6 +52,14 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         self.btnOk.setEnabled(False)
         self.btnClose = self.buttonBox.button(QDialogButtonBox.Close)
 
+        # FIXME: delete
+        # self.project_name_lbl = QLabel('project name')
+        # self.project_name_le = QLineEdit()
+        # self.checkBoxZip = QCheckBox('Zìppalo!')
+        # self.layout().addWidget(self.project_name_lbl)
+        # self.layout().addWidget(self.project_name_le)
+        # self.layout().addWidget(self.checkBoxZip)
+
         self.project_name_le.textChanged.connect(
             self.on_project_name_changed)
         self.leOutputDir.textChanged.connect(
@@ -142,7 +150,9 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
             p.write(f)
 
         # start consolidate thread that does all real work
-        self.workThread = consolidatethread.ConsolidateThread(self.iface, outputDir, newProjectFile)
+        self.workThread = consolidatethread.ConsolidateThread(
+            self.iface, outputDir, newProjectFile,
+            self.checkBoxZip.isChecked())
         self.workThread.rangeChanged.connect(self.setProgressRange)
         self.workThread.updateProgress.connect(self.updateProgress)
         self.workThread.processFinished.connect(self.processFinished)
