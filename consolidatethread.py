@@ -91,21 +91,23 @@ class ConsolidateThread(QThread):
             if not layer.isValid():
                 print("Layer %s is invalid" % layer.name())
             else:
-                layerType = layer.type()
-                layerName = layer.name()
-                layerUri = layer.dataProvider().dataSourceUri()
-                if layerType == QgsMapLayer.VectorLayer:
+                lType = layer.type()
+                lProviderType = layer.providerType()
+                lName = layer.name()
+                lUri = layer.dataProvider().dataSourceUri()
+                if lType == QgsMapLayer.VectorLayer:
                     # Always convert to GeoPackage
                     outFile = self.convertGenericVectorLayer(
-                        e, layer, layerName)
+                        e, layer, lName)
                     outFiles.append(outFile)
-                elif (layerType == QgsMapLayer.RasterLayer
-                      and self.checkIfWms(layerUri)):
-                    outFile = self.copyXmlRasterLayer(e, layer, layerName)
-                    outFiles.append(outFile)
+                elif (lType == QgsMapLayer.RasterLayer
+                        and lProviderType == 'gdal'):
+                    if self.checkGdalWms(lUri):
+                        outFile = self.copyXmlRasterLayer(e, layer, lName)
+                        outFiles.append(outFile)
                 else:
                     print("Layers with type '%s' currently not supported"
-                          % layerType)
+                          % lType)
 
             self.updateProgress.emit()
             self.mutex.lock()
@@ -229,9 +231,9 @@ class ConsolidateThread(QThread):
             child = child.nextSiblingElement()
         return None
 
-    def checkIfWms(self, layer):
+    def checkGdalWms(self, layer):
         ds = gdal.Open(layer, gdal.GA_ReadOnly)
-        is_wms = (True if ds.GetDriver().ShortName == "WMS" else False)
+        isGdalWms = True if ds.GetDriver().ShortName == "WMS" else False
         del ds
 
-        return is_wms
+        return isGdalWms
