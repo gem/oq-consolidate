@@ -92,7 +92,7 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         outDir = QFileDialog.getExistingDirectory(self,
                                                   self.tr("Select output directory"),
                                                   "."
-                                                 )
+                                                  )
         if not outDir:
             return
 
@@ -106,7 +106,7 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
             QMessageBox.warning(self,
                                 self.tr("OQ-Consolidate: Error"),
                                 self.tr("The project name is not set. Please specify it.")
-                               )
+                                )
             return
 
         outputDir = self.leOutputDir.text()
@@ -114,7 +114,7 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
             QMessageBox.warning(self,
                                 self.tr("OQ-Consolidate: Error"),
                                 self.tr("Output directory is not set. Please specify output directory.")
-                               )
+                                )
             return
 
         # create directory for layers if not exists
@@ -125,7 +125,7 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
                                        self.tr("Output directory already contains 'layers' subdirectory. " +
                                                "Maybe this directory was used to consolidate another project. Continue?"),
                                        QMessageBox.Yes | QMessageBox.No
-                                      )
+                                       )
             if res == QMessageBox.No:
                 return
         else:
@@ -188,10 +188,11 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         self.restoreGui()
 
     def processError(self, message):
-        QMessageBox.warning(self,
-                            self.tr("OQ-Consolidate: Error"),
-                            message
-                           )
+        QMessageBox.error(self,
+                          self.tr("OQ-Consolidate: Error"),
+                          message
+                          )
+        self.stopProcessing()
         self.restoreGui()
         return
 

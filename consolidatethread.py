@@ -89,7 +89,7 @@ class ConsolidateThread(QThread):
 
         for layer in layers:
             if not layer.isValid():
-                print("Layer %s is invalid" % layer.name())
+                self.processError.emit("Layer %s is invalid" % layer.name())
             else:
                 lType = layer.type()
                 lProviderType = layer.providerType()
@@ -100,14 +100,14 @@ class ConsolidateThread(QThread):
                     outFile = self.convertGenericVectorLayer(
                         e, layer, lName)
                     outFiles.append(outFile)
-                elif (lType == QgsMapLayer.RasterLayer
-                        and lProviderType == 'gdal'):
-                    if self.checkGdalWms(lUri):
-                        outFile = self.copyXmlRasterLayer(e, layer, lName)
-                        outFiles.append(outFile)
+                elif lType == QgsMapLayer.RasterLayer:
+                    if lProviderType == 'gdal':
+                        if self.checkGdalWms(lUri):
+                            outFile = self.copyXmlRasterLayer(e, layer, lName)
+                            outFiles.append(outFile)
                 else:
-                    print("Layers with type '%s' currently not supported"
-                          % lType)
+                    self.processError.emit(
+                        'Layer %s (type %s) is not supported' % (lName, lType))
 
             self.updateProgress.emit()
             self.mutex.lock()
