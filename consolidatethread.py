@@ -30,12 +30,16 @@
 import os
 import zipfile
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.QtXml import *
+from qgis.PyQt.QtCore import (QThread,
+                              pyqtSignal,
+                              QMutex,
+                              QIODevice,
+                              QTextStream,
+                              QFile,
+                              )
+from qgis.PyQt.QtXml import QDomDocument
 
-from qgis.core import *
-from qgis.gui import *
+from qgis.core import QgsMapLayer, QgsVectorFileWriter
 
 from osgeo import gdal
 from shutil import copyfile
@@ -60,6 +64,12 @@ class ConsolidateThread(QThread):
         self.saveToZip = saveToZip
 
     def run(self):
+        try:
+            self.consolidate()
+        except Exception as exc:
+            self.processError.emit(str(exc))
+
+    def consolidate(self):
         self.mutex.lock()
         self.stopMe = 0
         self.mutex.unlock()
@@ -75,7 +85,7 @@ class ConsolidateThread(QThread):
         # ensure that relative path used
         e = root.firstChildElement("properties")
         (e.firstChildElement("Paths").firstChild()
-         .firstChild().setNodeValue("false"))
+            .firstChild().setNodeValue("false"))
 
         # get layers section in project
         e = root.firstChildElement("projectlayers")
@@ -89,7 +99,9 @@ class ConsolidateThread(QThread):
 
         for layer in layers:
             if not layer.isValid():
-                self.processError.emit("Layer %s is invalid" % layer.name())
+                self.processError.emit(
+                    "Layer %s is invalid" % layer.name())
+                return
             else:
                 lType = layer.type()
                 lProviderType = layer.providerType()
@@ -103,11 +115,14 @@ class ConsolidateThread(QThread):
                 elif lType == QgsMapLayer.RasterLayer:
                     if lProviderType == 'gdal':
                         if self.checkGdalWms(lUri):
-                            outFile = self.copyXmlRasterLayer(e, layer, lName)
+                            outFile = self.copyXmlRasterLayer(
+                                e, layer, lName)
                             outFiles.append(outFile)
                 else:
                     self.processError.emit(
-                        'Layer %s (type %s) is not supported' % (lName, lType))
+                        'Layer %s (type %s) is not supported'
+                        % (lName, lType))
+                    return
 
             self.updateProgress.emit()
             self.mutex.lock()
