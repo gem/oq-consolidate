@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#******************************************************************************
+# *****************************************************************************
 #
 # QConsolidate
 # ---------------------------------------------------------
@@ -24,17 +24,26 @@
 # to the Free Software Foundation, 51 Franklin Street, Suite 500 Boston,
 # MA 02110-1335 USA.
 #
-#******************************************************************************
+# *****************************************************************************
 
 import os
 import re
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.QtXml import *
+from qgis.PyQt.QtCore import (QFileInfo,
+                              QDir,
+                              QFile,
+                              )
+from qgis.PyQt.QtGui import (QDialog,
+                             QDialogButtonBox,
+                             QFileDialog,
+                             QMessageBox,
+                             QApplication,
+                             # QLabel,
+                             # QLineEdit,
+                             # QCheckBox,
+                             )
 
-from qgis.core import *
-from qgis.gui import *
+from qgis.core import QgsProject
 
 import consolidatethread
 from ui.ui_qconsolidatedialogbase import Ui_QConsolidateDialog
@@ -89,10 +98,8 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
                               bool(self.leOutputDir.text()))
 
     def setOutDirectory(self):
-        outDir = QFileDialog.getExistingDirectory(self,
-                                                  self.tr("Select output directory"),
-                                                  "."
-                                                  )
+        outDir = QFileDialog.getExistingDirectory(
+            self, self.tr("Select output directory"), ".")
         if not outDir:
             return
 
@@ -103,37 +110,34 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         if project_name.endswith('.qgs'):
             project_name = project_name[:-4]
         if not project_name:
-            QMessageBox.warning(self,
-                                self.tr("OQ-Consolidate: Error"),
-                                self.tr("The project name is not set. Please specify it.")
-                                )
+            QMessageBox.critical(
+                self, self.tr("OQ-Consolidate: Error"),
+                self.tr("Please specify the project name"))
             return
 
         outputDir = self.leOutputDir.text()
         if not outputDir:
-            QMessageBox.warning(self,
-                                self.tr("OQ-Consolidate: Error"),
-                                self.tr("Output directory is not set. Please specify output directory.")
-                                )
+            QMessageBox.critical(
+                self, self.tr("OQ-Consolidate: Error"),
+                self.tr("Please specify the output directory."))
             return
 
         # create directory for layers if not exists
         d = QDir(outputDir)
         if d.exists("layers"):
-            res = QMessageBox.question(self,
-                                       self.tr("Directory exists"),
-                                       self.tr("Output directory already contains 'layers' subdirectory. " +
-                                               "Maybe this directory was used to consolidate another project. Continue?"),
-                                       QMessageBox.Yes | QMessageBox.No
-                                       )
+            res = QMessageBox.question(
+                self, self.tr("Directory exists"),
+                self.tr("Output directory already contains 'layers'"
+                        " subdirectory. Maybe this directory was used to"
+                        " consolidate another project. Continue?"),
+                QMessageBox.Yes | QMessageBox.No)
             if res == QMessageBox.No:
                 return
         else:
             if not d.mkdir("layers"):
-                QMessageBox.warning(self,
-                                    self.tr("OQ-Consolidate: Error"),
-                                    self.tr("Can't create directory for layers.")
-                                   )
+                QMessageBox.critical(
+                    self, self.tr("OQ-Consolidate: Error"),
+                    self.tr("Can't create directory for layers."))
                 return
 
         # copy project file
@@ -158,6 +162,7 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         self.workThread.processFinished.connect(self.processFinished)
         self.workThread.processInterrupted.connect(self.processInterrupted)
         self.workThread.processError.connect(self.processError)
+        self.workThread.exceptionOccurred.connect(self.exceptionOccurred)
 
         self.btnClose.setText(self.tr("Cancel"))
         self.btnOk.setEnabled(False)
@@ -188,10 +193,16 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         self.restoreGui()
 
     def processError(self, message):
-        QMessageBox.error(self,
-                          self.tr("OQ-Consolidate: Error"),
-                          message
-                          )
+        QMessageBox.critical(self,
+                             self.tr("OQ-Consolidate: Error"),
+                             message
+                             )
+        self.stopProcessing()
+        self.restoreGui()
+        return
+
+    def exceptionOccurred(self, message):
+        QMessageBox.critical(self, self.tr("OQ-Consolidate: Error"), message)
         self.stopProcessing()
         self.restoreGui()
         return
@@ -209,6 +220,7 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         self.buttonBox.rejected.connect(self.reject)
         self.btnClose.setText(self.tr("Close"))
         self.set_ok_button()
+
 
 # from https://github.com/django/django/blob/master/django/utils/text.py#L223
 def get_valid_filename(s):
