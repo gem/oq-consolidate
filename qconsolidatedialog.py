@@ -37,15 +37,13 @@ from qgis.PyQt.QtGui import (QDialog,
                              QDialogButtonBox,
                              QFileDialog,
                              QMessageBox,
-                             QLabel,
-                             QLineEdit,
-                             QCheckBox,
                              QApplication,
+                             # QLabel,
+                             # QLineEdit,
+                             # QCheckBox,
                              )
-# from qgis.pyqt.QtXml import
 
 from qgis.core import QgsProject
-# from qgis.gui import *
 
 import consolidatethread
 from ui.ui_qconsolidatedialogbase import Ui_QConsolidateDialog
