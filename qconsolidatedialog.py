@@ -64,12 +64,12 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         self.btnClose = self.buttonBox.button(QDialogButtonBox.Close)
 
         # FIXME: this is needed if you can't compile the UI
-        self.project_name_lbl = QLabel('Project name')
-        self.project_name_le = QLineEdit()
-        self.checkBoxZip = QCheckBox('Consolidate in a Zip file')
-        self.layout().addWidget(self.project_name_lbl)
-        self.layout().addWidget(self.project_name_le)
-        self.layout().addWidget(self.checkBoxZip)
+        # self.project_name_lbl = QLabel('Project name')
+        # self.project_name_le = QLineEdit()
+        # self.checkBoxZip = QCheckBox('Consolidate in a Zip file')
+        # self.layout().addWidget(self.project_name_lbl)
+        # self.layout().addWidget(self.project_name_le)
+        # self.layout().addWidget(self.checkBoxZip)
 
         self.project_name_le.textChanged.connect(
             self.on_project_name_changed)
@@ -164,6 +164,7 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         self.workThread.processFinished.connect(self.processFinished)
         self.workThread.processInterrupted.connect(self.processInterrupted)
         self.workThread.processError.connect(self.processError)
+        self.workThread.exceptionOccurred.connect(self.exceptionOccurred)
 
         self.btnClose.setText(self.tr("Cancel"))
         self.btnOk.setEnabled(False)
@@ -198,6 +199,12 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
                              self.tr("OQ-Consolidate: Error"),
                              message
                              )
+        self.stopProcessing()
+        self.restoreGui()
+        return
+
+    def exceptionOccurred(self, message):
+        QMessageBox.critical(self, self.tr("OQ-Consolidate: Error"), message)
         self.stopProcessing()
         self.restoreGui()
         return

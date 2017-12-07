@@ -27,6 +27,8 @@
 #
 # *****************************************************************************
 
+import sys
+import traceback
 import os
 import zipfile
 
@@ -51,6 +53,7 @@ class ConsolidateThread(QThread):
     updateProgress = pyqtSignal()
     processFinished = pyqtSignal()
     processInterrupted = pyqtSignal()
+    exceptionOccurred = pyqtSignal(str)
 
     def __init__(self, iface, outputDir, projectFile, saveToZip):
         QThread.__init__(self, QThread.currentThread())
@@ -66,8 +69,11 @@ class ConsolidateThread(QThread):
     def run(self):
         try:
             self.consolidate()
-        except Exception as exc:
-            self.processError.emit(str(exc))
+        except Exception:
+            ex_type, ex, tb = sys.exc_info()
+            tb_str = ''.join(traceback.format_tb(tb))
+            msg = "%s:\n\n%s" % (ex_type.__name__, tb_str)
+            self.exceptionOccurred.emit(msg)
 
     def consolidate(self):
         self.mutex.lock()
