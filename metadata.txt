@@ -1,7 +1,7 @@
 [general]
 name=OQ-Consolidate
 description=QConsolidate for OpenQuake
-about=OQ-Consolidate is a simplified version of QConsolidate (https://github.com/alexbruy/qconsolidate), that supports only vector layers (by design), always converts data in GeoPackage format, creates a project if it does not exist yet.
+about=OQ-Consolidate is a modified version of QConsolidate (https://github.com/alexbruy/qconsolidate), that saves raster layers and converts vector layers to GeoPackage, creates a project if it does not exist yet, allows to give a customized (validated) name to the consolidated project, allows to store all the project files in a zip file
 category=Plugins
 version=0.1.0
 qgisMinimumVersion=2.0

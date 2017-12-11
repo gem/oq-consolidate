@@ -38,6 +38,7 @@ from qgis.PyQt.QtGui import (QDialog,
                              QFileDialog,
                              QMessageBox,
                              QApplication,
+                             # FIXME: needed if you can't compile the UI
                              # QLabel,
                              # QLineEdit,
                              # QCheckBox,

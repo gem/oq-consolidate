@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#******************************************************************************
+# *****************************************************************************
 #
 # QConsolidate
 # ---------------------------------------------------------
@@ -24,18 +24,26 @@
 # to the Free Software Foundation, 51 Franklin Street, Suite 500 Boston,
 # MA 02110-1335 USA.
 #
-#******************************************************************************
+# *****************************************************************************
 
 
 import os
 import ConfigParser
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from qgis.PyQt.QtCore import (
+                              QUrl,
+                              )
+from qgis.PyQt.QtGui import (
+                             QDesktopServices,
+                             QDialog,
+                             QDialogButtonBox,
+                             QPixmap,
+                             QTextDocument,
+                             )
 
 from ui.ui_aboutdialogbase import Ui_Dialog
 
-import resources_rc
+import resources_rc  # NOQA
 
 
 class AboutDialog(QDialog, Ui_Dialog):
@@ -63,21 +71,21 @@ class AboutDialog(QDialog, Ui_Dialog):
         QDialog.reject(self)
 
     def openHelp(self):
-        overrideLocale = bool(QSettings().value("locale/overrideFlag", False))
-        if not overrideLocale:
-            localeFullName = QLocale.system().name()
-        else:
-            localeFullName = QSettings().value("locale/userLocale", "")
-
-        localeShortName = localeFullName[0:2]
-        if localeShortName in ["ru", "uk"]:
-            QDesktopServices.openUrl(QUrl("http://hub.qgis.org/projects/qconsolidate/wiki"))
-        else:
-            QDesktopServices.openUrl(QUrl("http://hub.qgis.org/projects/qconsolidate/wiki"))
+        QDesktopServices.openUrl(QUrl(
+            "https://github.com/gem/oq-consolidate"))
 
     def getAboutText(self):
-        return self.tr("""<p>Consolidates all layers from current QGIS project into one directory.</p>
-    <p><strong>Developers</strong>: Alexander Bruy</p>
-    <p><strong>Homepage</strong>: <a href="http://hub.qgis.org/projects/qconsolidate">http://hub.qgis.org/projects/qconsolidate</a></p>
-    <p>Please report bugs at <a href="http://hub.qgis.org/projects/qconsolidate/issues">bugtracker</a>.</p>
-    """)
+        return self.tr(
+            """
+            <p>Consolidates all layers from current QGIS project into
+            one directory (optionally zipping the whole project in a
+            single file).</p>
+            <p><strong>Developed by</strong>: GEM Foundation</p>
+            <p>Fork of the q-consolidate plugin by Alexander Bruy</p>
+            <p><strong>Homepage</strong>:
+            <a href="https://github.com/gem/oq-consolidate/">
+            homepage</a></p>
+            <p>Please report bugs at
+            <a href="https://github.com/gem/oq-consolidate/issues">
+            bugtracker</a>.</p>
+            """)
