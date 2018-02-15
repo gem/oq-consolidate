@@ -122,7 +122,8 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
                 self, self.tr("OQ-Consolidate: Error"),
                 self.tr("Please specify the output directory."))
             return
-        outputDir = os.path.join(outputDir, project_name)
+        outputDir = os.path.join(outputDir,
+                                 get_valid_filename(project_name))
 
         # create main directory if not exists
         d = QDir(outputDir)
