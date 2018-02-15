@@ -122,9 +122,19 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
                 self, self.tr("OQ-Consolidate: Error"),
                 self.tr("Please specify the output directory."))
             return
+        outputDir = os.path.join(outputDir,
+                                 get_valid_filename(project_name))
+
+        # create main directory if not exists
+        d = QDir(outputDir)
+        if not d.exists():
+            if not d.mkpath("."):
+                QMessageBox.critical(
+                    self, self.tr("OQ-Consolidate: Error"),
+                    self.tr("Can't create directory to store the project."))
+                return
 
         # create directory for layers if not exists
-        d = QDir(outputDir)
         if d.exists("layers"):
             res = QMessageBox.question(
                 self, self.tr("Directory exists"),
