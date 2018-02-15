@@ -70,8 +70,8 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         # self.layout().addWidget(self.project_name_le)
         # self.layout().addWidget(self.checkBoxZip)
 
-        self.project_name_le.textChanged.connect(
-            self.on_project_name_changed)
+        self.project_name_le.editingFinished.connect(
+            self.on_project_name_editing_finished)
         self.leOutputDir.textChanged.connect(
             self.set_ok_button)
 
@@ -81,7 +81,7 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
 
         self.btnBrowse.clicked.connect(self.setOutDirectory)
 
-    def on_project_name_changed(self):
+    def on_project_name_editing_finished(self):
         try:
             valid_filename = get_valid_filename(self.project_name_le.text())
         except UnicodeEncodeError:
