@@ -9,6 +9,8 @@ OQ-Consolidate is a modified version of [QConsolidate](https://github.com/alexbr
 
 ### Installation
 
+# FIXME: No need to make, and perhaps some dependencies are not needed too 
+
 Run `make` first!
 
 It requires `PyQt4-dev`/`PyQt4-devel` and `qt-dev`/`qt-devel` (and looks for `lrelease`. you may need to symlink it).

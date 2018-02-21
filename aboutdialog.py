@@ -37,19 +37,21 @@ from qgis.PyQt.QtGui import (
                              QDesktopServices,
                              QDialog,
                              QDialogButtonBox,
+                             QHBoxLayout,
+                             QLabel,
                              QPixmap,
+                             QTextBrowser,
                              QTextDocument,
+                             QVBoxLayout,
                              )
-
-from ui.ui_aboutdialogbase import Ui_Dialog
 
 import resources_rc  # NOQA
 
 
-class AboutDialog(QDialog, Ui_Dialog):
+class AboutDialog(QDialog):
     def __init__(self):
         QDialog.__init__(self)
-        self.setupUi(self)
+        self.initGui()
 
         self.btnHelp = self.buttonBox.button(QDialogButtonBox.Help)
 
@@ -66,6 +68,28 @@ class AboutDialog(QDialog, Ui_Dialog):
         self.textBrowser.setOpenExternalLinks(True)
 
         self.buttonBox.helpRequested.connect(self.openHelp)
+
+        self.btnClose = self.buttonBox.button(QDialogButtonBox.Close)
+        self.btnClose.clicked.connect(self.reject)
+
+    def initGui(self):
+        self.setWindowTitle('OQ-Consolidate')
+        self.buttonBox = QDialogButtonBox(
+            QDialogButtonBox.Close | QDialogButtonBox.Help)
+        self.label = QLabel("OQ-Consolidate")
+        self.label.setStyleSheet("font-weight: bold")
+        self.lblLogo = QLabel()
+        self.lblVersion = QLabel()
+        self.textBrowser = QTextBrowser()
+        self.h_layout = QHBoxLayout()
+        self.h_layout.addWidget(self.lblLogo)
+        self.h_layout.addWidget(self.label)
+        self.v_layout = QVBoxLayout()
+        self.v_layout.addLayout(self.h_layout)
+        self.v_layout.addWidget(self.lblVersion)
+        self.v_layout.addWidget(self.textBrowser)
+        self.v_layout.addWidget(self.buttonBox)
+        self.setLayout(self.v_layout)
 
     def reject(self):
         QDialog.reject(self)

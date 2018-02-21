@@ -33,27 +33,31 @@ from qgis.PyQt.QtCore import (QFileInfo,
                               QDir,
                               QFile,
                               )
-from qgis.PyQt.QtGui import (QDialog,
+from qgis.PyQt.QtGui import (
+                             QApplication,
+                             QCheckBox,
+                             QDialog,
                              QDialogButtonBox,
                              QFileDialog,
+                             QHBoxLayout,
+                             QLabel,
+                             QLineEdit,
                              QMessageBox,
-                             QApplication,
-                             # FIXME: needed if you can't compile the UI
-                             # QLabel,
-                             # QLineEdit,
-                             # QCheckBox,
+                             QProgressBar,
+                             QPushButton,
+                             QVBoxLayout,
                              )
 
 from qgis.core import QgsProject
 
 import consolidatethread
-from ui.ui_qconsolidatedialogbase import Ui_QConsolidateDialog
 
 
-class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
+class QConsolidateDialog(QDialog):
     def __init__(self, iface):
         QDialog.__init__(self)
-        self.setupUi(self)
+        self.initGui()
+
         self.iface = iface
 
         self.workThread = None
@@ -61,14 +65,7 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         self.btnOk = self.buttonBox.button(QDialogButtonBox.Ok)
         self.btnOk.setEnabled(False)
         self.btnClose = self.buttonBox.button(QDialogButtonBox.Close)
-
-        # FIXME: this is needed if you can't compile the UI
-        # self.project_name_lbl = QLabel('Project name')
-        # self.project_name_le = QLineEdit()
-        # self.checkBoxZip = QCheckBox('Consolidate in a Zip file')
-        # self.layout().addWidget(self.project_name_lbl)
-        # self.layout().addWidget(self.project_name_le)
-        # self.layout().addWidget(self.checkBoxZip)
+        self.btnClose.clicked.connect(self.reject)
 
         self.project_name_le.editingFinished.connect(
             self.on_project_name_editing_finished)
@@ -80,6 +77,39 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
             self.project_name_le.setText(project_name)
 
         self.btnBrowse.clicked.connect(self.setOutDirectory)
+
+    def initGui(self):
+        self.setWindowTitle('OQ-Consolidate')
+        self.project_name_lbl = QLabel('Project name')
+        self.project_name_le = QLineEdit()
+        self.checkBoxZip = QCheckBox('Consolidate in a Zip file')
+
+        self.label = QLabel("Output directory")
+        self.leOutputDir = QLineEdit()
+        self.btnBrowse = QPushButton("Browse...")
+        self.progressBar = QProgressBar()
+        self.buttonBox = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Close)
+
+        self.v_layout = QVBoxLayout()
+        self.setLayout(self.v_layout)
+
+        self.proj_name_hlayout = QHBoxLayout()
+        self.proj_name_hlayout.addWidget(self.project_name_lbl)
+        self.proj_name_hlayout.addWidget(self.project_name_le)
+        self.v_layout.addLayout(self.proj_name_hlayout)
+
+        self.v_layout.addWidget(self.checkBoxZip)
+
+        self.h_layout = QHBoxLayout()
+        self.h_layout.addWidget(self.label)
+        self.h_layout.addWidget(self.leOutputDir)
+        self.h_layout.addWidget(self.btnBrowse)
+
+        self.v_layout.addLayout(self.h_layout)
+
+        self.v_layout.addWidget(self.progressBar)
+        self.v_layout.addWidget(self.buttonBox)
 
     def on_project_name_editing_finished(self):
         try:

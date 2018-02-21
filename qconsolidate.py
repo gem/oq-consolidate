@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
-#******************************************************************************
+# FIXME: Update copyright strings everywhere
+
+# *****************************************************************************
 #
 # QConsolidate
 # ---------------------------------------------------------
@@ -24,20 +26,30 @@
 # to the Free Software Foundation, 51 Franklin Street, Suite 500 Boston,
 # MA 02110-1335 USA.
 #
-#******************************************************************************
+# *****************************************************************************
 
-import qgis
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+import qgis  # NOQA
 
-from qgis.core import *
-from qgis.gui import *
+from qgis.PyQt.QtCore import (
+                              QCoreApplication,
+                              QFileInfo,
+                              QLocale,
+                              QSettings,
+                              QTranslator,
+                              )
+from qgis.PyQt.QtGui import (
+                             QMessageBox,
+                             QAction,
+                             QIcon,
+                             )
+
+from qgis.core import QGis, QgsApplication
 
 import qconsolidatedialog
 import aboutdialog
 
-import resources_rc
+import resources_rc  # NOQA
 
 
 class QConsolidatePlugin:
@@ -47,19 +59,24 @@ class QConsolidatePlugin:
         self.qgsVersion = unicode(QGis.QGIS_VERSION_INT)
 
         # For i18n support
-        userPluginPath = QFileInfo(QgsApplication.qgisUserDbFilePath()).path() + "/python/plugins/qconsolidate"
-        systemPluginPath = QgsApplication.prefixPath() + "/python/plugins/qconsolidate"
+        userPluginPath = (QFileInfo(QgsApplication.qgisUserDbFilePath()).path()
+                          + "/python/plugins/qconsolidate")
+        systemPluginPath = (
+            QgsApplication.prefixPath() + "/python/plugins/qconsolidate")
 
-        overrideLocale = QSettings().value("locale/overrideFlag", False, type=bool)
+        overrideLocale = QSettings().value(
+            "locale/overrideFlag", False, type=bool)
         if not overrideLocale:
             localeFullName = QLocale.system().name()
         else:
             localeFullName = QSettings().value("locale/userLocale", "")
 
         if QFileInfo(userPluginPath).exists():
-            translationPath = userPluginPath + "/i18n/qconsolidate_" + localeFullName + ".qm"
+            translationPath = (userPluginPath + "/i18n/qconsolidate_"
+                               + localeFullName + ".qm")
         else:
-            translationPath = systemPluginPath + "/i18n/qconsolidate_" + localeFullName + ".qm"
+            translationPath = (systemPluginPath + "/i18n/qconsolidate_"
+                               + localeFullName + ".qm")
 
         self.localePath = translationPath
         if QFileInfo(self.localePath).exists():
@@ -69,26 +86,53 @@ class QConsolidatePlugin:
 
     def initGui(self):
         if int(self.qgsVersion) < 20000:
-            qgisVersion = self.qgsVersion[0] + "." + self.qgsVersion[2] + "." + self.qgsVersion[3]
-            QMessageBox.warning(self.iface.mainWindow(), "OQ-Consolidate",
-                                QCoreApplication.translate("OQ-Consolidate", "QGIS %s detected.\n") % (qgisVersion) +
-                                QCoreApplication.translate("OQ-Consolidate", "This version of OQ-Consolidate requires at least QGIS version 2.0.\nPlugin will not be enabled."))
+            qgisVersion = (self.qgsVersion[0] + "."
+                           + self.qgsVersion[2] + "."
+                           + self.qgsVersion[3])
+            QMessageBox.warning(
+                self.iface.mainWindow(),
+                "OQ-Consolidate",
+                QCoreApplication.translate(
+                    "OQ-Consolidate",
+                    "QGIS %s detected.\n") % (qgisVersion) +
+                QCoreApplication.translate(
+                    "OQ-Consolidate",
+                    ("This version of OQ-Consolidate requires at least"
+                        " QGIS version 2.0.\nPlugin will not be enabled.")))
             return None
 
-        self.actionRun = QAction(QIcon(":/icons/qconsolidate.png"), "OQ-Consolidate", self.iface.mainWindow())
-        self.actionRun.setStatusTip(QCoreApplication.translate("OQ-Consolidate", "Consolidates all layers from current QGIS project into one directory"))
-        self.actionAbout = QAction(QIcon(":/icons/about.png"), "About OQ-Consolidate", self.iface.mainWindow())
+        self.actionRun = QAction(
+            QIcon(":/icons/qconsolidate.png"),
+            "OQ-Consolidate",
+            self.iface.mainWindow())
+        self.actionRun.setStatusTip(
+            QCoreApplication.translate(
+                "OQ-Consolidate",
+                ("Consolidates all layers from current"
+                 " QGIS project into one directory")))
+        self.actionAbout = QAction(
+            QIcon(":/icons/about.png"),
+            "About OQ-Consolidate",
+            self.iface.mainWindow())
 
         self.actionRun.triggered.connect(self.run)
         self.actionAbout.triggered.connect(self.about)
 
-        self.iface.addPluginToMenu(QCoreApplication.translate("OQ-Consolidate", "OQ-Consolidate"), self.actionRun)
-        self.iface.addPluginToMenu(QCoreApplication.translate("OQ-Consolidate", "OQ-Consolidate"), self.actionAbout)
+        self.iface.addPluginToMenu(
+            QCoreApplication.translate(
+                "OQ-Consolidate", "OQ-Consolidate"), self.actionRun)
+        self.iface.addPluginToMenu(
+            QCoreApplication.translate(
+                "OQ-Consolidate", "OQ-Consolidate"), self.actionAbout)
         self.iface.addToolBarIcon(self.actionRun)
 
     def unload(self):
-        self.iface.removePluginMenu(QCoreApplication.translate("OQ-Consolidate", "OQ-Consolidate"), self.actionRun)
-        self.iface.removePluginMenu(QCoreApplication.translate("OQ-Consolidate", "OQ-Consolidate"), self.actionAbout)
+        self.iface.removePluginMenu(
+            QCoreApplication.translate(
+                "OQ-Consolidate", "OQ-Consolidate"), self.actionRun)
+        self.iface.removePluginMenu(
+            QCoreApplication.translate(
+                "OQ-Consolidate", "OQ-Consolidate"), self.actionAbout)
         self.iface.removeToolBarIcon(self.actionRun)
 
     def run(self):
