@@ -64,6 +64,7 @@ class QConsolidateDialog(QDialog):
         self.btnOk.setEnabled(False)
         self.btnOk.clicked.connect(self.accept)
         self.btnCancel = self.buttonBox.button(QDialogButtonBox.Cancel)
+        self.btnCancel.setEnabled(True)
         self.btnCancel.clicked.connect(self.reject)
         self.btnAbort = self.buttonBox.button(QDialogButtonBox.Abort)
         self.btnAbort.setEnabled(False)
@@ -139,6 +140,7 @@ class QConsolidateDialog(QDialog):
 
     def accept(self):
         self.btnAbort.setEnabled(True)
+        self.btnCancel.setEnabled(False)
         project_name = self.project_name_le.text()
         if project_name.endswith('.qgs'):
             project_name = project_name[:-4]
@@ -268,6 +270,7 @@ class QConsolidateDialog(QDialog):
 
         QApplication.restoreOverrideCursor()
         self.btnAbort.setEnabled(False)
+        self.btnCancel.setEnabled(True)
         self.set_ok_button()
 
 
