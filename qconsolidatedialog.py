@@ -29,13 +29,16 @@
 import os
 import re
 
-from qgis.PyQt.QtCore import (QFileInfo,
+from qgis.PyQt.QtCore import (
                               QDir,
                               QFile,
+                              QFileInfo,
+                              Qt,
                               )
 from qgis.PyQt.QtGui import (
                              QApplication,
                              QCheckBox,
+                             QCursor,
                              QDialog,
                              QDialogButtonBox,
                              QFileDialog,
@@ -50,7 +53,7 @@ from qgis.PyQt.QtGui import (
 
 from qgis.core import QgsProject
 
-import consolidatethread
+from consolidatethread import ConsolidateThread
 
 
 class QConsolidateDialog(QDialog):
@@ -64,8 +67,12 @@ class QConsolidateDialog(QDialog):
 
         self.btnOk = self.buttonBox.button(QDialogButtonBox.Ok)
         self.btnOk.setEnabled(False)
-        self.btnClose = self.buttonBox.button(QDialogButtonBox.Close)
-        self.btnClose.clicked.connect(self.reject)
+        self.btnOk.clicked.connect(self.accept)
+        self.btnCancel = self.buttonBox.button(QDialogButtonBox.Cancel)
+        self.btnCancel.clicked.connect(self.reject)
+        self.btnAbort = self.buttonBox.button(QDialogButtonBox.Abort)
+        self.btnAbort.setEnabled(False)
+        self.btnAbort.clicked.connect(self.stopProcessing)
 
         self.project_name_le.editingFinished.connect(
             self.on_project_name_editing_finished)
@@ -89,7 +96,8 @@ class QConsolidateDialog(QDialog):
         self.btnBrowse = QPushButton("Browse...")
         self.progressBar = QProgressBar()
         self.buttonBox = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Close)
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel |
+            QDialogButtonBox.Abort)
 
         self.v_layout = QVBoxLayout()
         self.setLayout(self.v_layout)
@@ -99,15 +107,13 @@ class QConsolidateDialog(QDialog):
         self.proj_name_hlayout.addWidget(self.project_name_le)
         self.v_layout.addLayout(self.proj_name_hlayout)
 
-        self.v_layout.addWidget(self.checkBoxZip)
-
         self.h_layout = QHBoxLayout()
         self.h_layout.addWidget(self.label)
         self.h_layout.addWidget(self.leOutputDir)
         self.h_layout.addWidget(self.btnBrowse)
-
         self.v_layout.addLayout(self.h_layout)
 
+        self.v_layout.addWidget(self.checkBoxZip)
         self.v_layout.addWidget(self.progressBar)
         self.v_layout.addWidget(self.buttonBox)
 
@@ -137,6 +143,7 @@ class QConsolidateDialog(QDialog):
         self.leOutputDir.setText(outDir)
 
     def accept(self):
+        self.btnAbort.setEnabled(True)
         project_name = self.project_name_le.text()
         if project_name.endswith('.qgs'):
             project_name = project_name[:-4]
@@ -144,6 +151,7 @@ class QConsolidateDialog(QDialog):
             QMessageBox.critical(
                 self, self.tr("OQ-Consolidate: Error"),
                 self.tr("Please specify the project name"))
+            self.restoreGui()
             return
 
         outputDir = self.leOutputDir.text()
@@ -151,6 +159,7 @@ class QConsolidateDialog(QDialog):
             QMessageBox.critical(
                 self, self.tr("OQ-Consolidate: Error"),
                 self.tr("Please specify the output directory."))
+            self.restoreGui()
             return
         outputDir = os.path.join(outputDir,
                                  get_valid_filename(project_name))
@@ -162,6 +171,7 @@ class QConsolidateDialog(QDialog):
                 QMessageBox.critical(
                     self, self.tr("OQ-Consolidate: Error"),
                     self.tr("Can't create directory to store the project."))
+                self.restoreGui()
                 return
 
         # create directory for layers if not exists
@@ -173,80 +183,84 @@ class QConsolidateDialog(QDialog):
                         " consolidate another project. Continue?"),
                 QMessageBox.Yes | QMessageBox.No)
             if res == QMessageBox.No:
+                self.restoreGui()
                 return
         else:
             if not d.mkdir("layers"):
                 QMessageBox.critical(
                     self, self.tr("OQ-Consolidate: Error"),
                     self.tr("Can't create directory for layers."))
+                self.restoreGui()
                 return
 
         # copy project file
         projectFile = QgsProject.instance().fileName()
-        if projectFile:
-            f = QFile(projectFile)
-            newProjectFile = os.path.join(outputDir,
-                                          '%s.qgs' % project_name)
-            f.copy(newProjectFile)
-        else:
-            newProjectFile = os.path.join(outputDir, '%s.qgs' % project_name)
-            f = QFileInfo(newProjectFile)
-            p = QgsProject.instance()
-            p.write(f)
+        try:
+            if projectFile:
+                f = QFile(projectFile)
+                newProjectFile = os.path.join(outputDir,
+                                              '%s.qgs' % project_name)
+                f.copy(newProjectFile)
+            else:
+                newProjectFile = os.path.join(
+                    outputDir, '%s.qgs' % project_name)
+                f = QFileInfo(newProjectFile)
+                p = QgsProject.instance()
+                p.write(f)
+        except Exception:
+            self.restoreGui()
+            raise
+            return
+
+        QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
 
         # start consolidate thread that does all real work
-        self.workThread = consolidatethread.ConsolidateThread(
+        self.workThread = ConsolidateThread(
             self.iface, outputDir, newProjectFile,
             self.checkBoxZip.isChecked())
-        self.workThread.rangeChanged.connect(self.setProgressRange)
-        self.workThread.updateProgress.connect(self.updateProgress)
-        self.workThread.processFinished.connect(self.processFinished)
-        self.workThread.processInterrupted.connect(self.processInterrupted)
-        self.workThread.processError.connect(self.processError)
-        self.workThread.exceptionOccurred.connect(self.exceptionOccurred)
+        self.workThread.rangeChanged.connect(self.on_rangeChanged)
+        self.workThread.updateProgress.connect(self.on_updateProgress)
+        self.workThread.processFinished.connect(self.on_processFinished)
+        self.workThread.processInterrupted.connect(self.on_processInterrupted)
+        self.workThread.processError.connect(self.on_processError)
+        self.workThread.exceptionOccurred.connect(self.on_exceptionOccurred)
 
-        self.btnClose.setText(self.tr("Cancel"))
         self.btnOk.setEnabled(False)
-        self.buttonBox.rejected.disconnect(self.reject)
-        self.btnClose.clicked.connect(self.stopProcessing)
 
         self.workThread.start()
 
-    def reject(self):
-        QDialog.reject(self)
-
-    def setProgressRange(self, maxValue):
+    def on_rangeChanged(self, maxValue):
         self.progressBar.setRange(0, maxValue)
         self.progressBar.setValue(0)
 
-    def updateProgress(self):
+    def on_updateProgress(self):
         self.progressBar.setValue(self.progressBar.value() + 1)
 
-    def processFinished(self):
+    def on_processFinished(self):
         self.stopProcessing()
+        QApplication.restoreOverrideCursor()
         QMessageBox.information(self,
                                 self.tr("OQ-Consolidate: Info"),
                                 'Consolidation complete.'
                                 )
+        super(QConsolidateDialog, self).accept()
+
+    def on_processInterrupted(self):
+        self.stopProcessing()
         self.restoreGui()
 
-    def processInterrupted(self):
+    def on_processError(self, message):
         self.restoreGui()
-
-    def processError(self, message):
         QMessageBox.critical(self,
                              self.tr("OQ-Consolidate: Error"),
                              message
                              )
         self.stopProcessing()
-        self.restoreGui()
-        return
 
-    def exceptionOccurred(self, message):
+    def on_exceptionOccurred(self, message):
+        self.restoreGui()
         QMessageBox.critical(self, self.tr("OQ-Consolidate: Error"), message)
         self.stopProcessing()
-        self.restoreGui()
-        return
 
     def stopProcessing(self):
         if self.workThread is not None:
@@ -258,8 +272,7 @@ class QConsolidateDialog(QDialog):
         self.progressBar.setValue(0)
 
         QApplication.restoreOverrideCursor()
-        self.buttonBox.rejected.connect(self.reject)
-        self.btnClose.setText(self.tr("Close"))
+        self.btnAbort.setEnabled(False)
         self.set_ok_button()
 
 

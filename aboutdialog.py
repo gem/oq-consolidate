@@ -91,9 +91,6 @@ class AboutDialog(QDialog):
         self.v_layout.addWidget(self.buttonBox)
         self.setLayout(self.v_layout)
 
-    def reject(self):
-        QDialog.reject(self)
-
     def openHelp(self):
         QDesktopServices.openUrl(QUrl(
             "https://github.com/gem/oq-consolidate"))
