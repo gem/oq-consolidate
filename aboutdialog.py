@@ -39,8 +39,6 @@ from qgis.PyQt.QtGui import (
                              QVBoxLayout,
                              )
 
-import resources_rc  # NOQA
-
 
 class AboutDialog(QDialog):
     def __init__(self):
