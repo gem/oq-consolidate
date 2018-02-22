@@ -23,20 +23,14 @@
 
 import qgis  # NOQA
 
-from qgis.PyQt.QtCore import (
-                              QCoreApplication,
-                              QFileInfo,
-                              QLocale,
-                              QSettings,
-                              QTranslator,
-                              )
+from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import (
                              QMessageBox,
                              QAction,
                              QIcon,
                              )
 
-from qgis.core import QGis, QgsApplication
+from qgis.core import QGis
 
 import qconsolidatedialog
 import aboutdialog
