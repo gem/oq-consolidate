@@ -1,30 +1,24 @@
 # -*- coding: utf-8 -*-
+# vim: tabstop=4 shiftwidth=4 softtabstop=4
+#
+# Copyright (C) 2017-2018 GEM Foundation
+#
+# OpenQuake is free software: you can redistribute it and/or modify it
+# under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# OpenQuake is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with OpenQuake. If not, see <http://www.gnu.org/licenses/>.
 
-# *****************************************************************************
-#
-# QConsolidate
-# ---------------------------------------------------------
-# Consolidates all layers from current QGIS project into one directory and
-# creates copy of current project using this consolidated layers.
-#
-# Copyright (C) 2012-2013 Alexander Bruy (alexander.bruy@gmail.com)
-#
-# This source is free software; you can redistribute it and/or modify it under
-# the terms of the GNU General Public License as published by the Free
-# Software Foundation, either version 2 of the License, or (at your option)
-# any later version.
-#
-# This code is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
-# details.
-#
-# A copy of the GNU General Public License is available on the World Wide Web
-# at <http://www.gnu.org/licenses/>. You can also obtain it by writing
-# to the Free Software Foundation, 51 Franklin Street, Suite 500 Boston,
-# MA 02110-1335 USA.
-#
-# *****************************************************************************
+# This plugin was forked from https://github.com/alexbruy/qconsolidate
+# by Alexander Bruy (alexander.bruy@gmail.com),
+# starting from commit 6f27b0b14b925a25c75ea79aea62a0e3d51e30e3.
 
 
 import os
@@ -37,19 +31,19 @@ from qgis.PyQt.QtGui import (
                              QDesktopServices,
                              QDialog,
                              QDialogButtonBox,
+                             QHBoxLayout,
+                             QLabel,
                              QPixmap,
+                             QTextBrowser,
                              QTextDocument,
+                             QVBoxLayout,
                              )
 
-from ui.ui_aboutdialogbase import Ui_Dialog
 
-import resources_rc  # NOQA
-
-
-class AboutDialog(QDialog, Ui_Dialog):
+class AboutDialog(QDialog):
     def __init__(self):
         QDialog.__init__(self)
-        self.setupUi(self)
+        self.initGui()
 
         self.btnHelp = self.buttonBox.button(QDialogButtonBox.Help)
 
@@ -67,8 +61,27 @@ class AboutDialog(QDialog, Ui_Dialog):
 
         self.buttonBox.helpRequested.connect(self.openHelp)
 
-    def reject(self):
-        QDialog.reject(self)
+        self.btnClose = self.buttonBox.button(QDialogButtonBox.Close)
+        self.btnClose.clicked.connect(self.reject)
+
+    def initGui(self):
+        self.setWindowTitle('OQ-Consolidate')
+        self.buttonBox = QDialogButtonBox(
+            QDialogButtonBox.Close | QDialogButtonBox.Help)
+        self.label = QLabel("OQ-Consolidate")
+        self.label.setStyleSheet("font-weight: bold")
+        self.lblLogo = QLabel()
+        self.lblVersion = QLabel()
+        self.textBrowser = QTextBrowser()
+        self.h_layout = QHBoxLayout()
+        self.h_layout.addWidget(self.lblLogo)
+        self.h_layout.addWidget(self.label)
+        self.v_layout = QVBoxLayout()
+        self.v_layout.addLayout(self.h_layout)
+        self.v_layout.addWidget(self.lblVersion)
+        self.v_layout.addWidget(self.textBrowser)
+        self.v_layout.addWidget(self.buttonBox)
+        self.setLayout(self.v_layout)
 
     def openHelp(self):
         QDesktopServices.openUrl(QUrl(

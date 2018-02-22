@@ -1,74 +1,74 @@
 # -*- coding: utf-8 -*-
+# vim: tabstop=4 shiftwidth=4 softtabstop=4
+#
+# Copyright (C) 2017-2018 GEM Foundation
+#
+# OpenQuake is free software: you can redistribute it and/or modify it
+# under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# OpenQuake is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with OpenQuake. If not, see <http://www.gnu.org/licenses/>.
 
-# *****************************************************************************
-#
-# QConsolidate
-# ---------------------------------------------------------
-# Consolidates all layers from current QGIS project into one directory and
-# creates copy of current project using this consolidated layers.
-#
-# Copyright (C) 2012-2013 Alexander Bruy (alexander.bruy@gmail.com)
-#
-# This source is free software; you can redistribute it and/or modify it under
-# the terms of the GNU General Public License as published by the Free
-# Software Foundation, either version 2 of the License, or (at your option)
-# any later version.
-#
-# This code is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
-# details.
-#
-# A copy of the GNU General Public License is available on the World Wide Web
-# at <http://www.gnu.org/licenses/>. You can also obtain it by writing
-# to the Free Software Foundation, 51 Franklin Street, Suite 500 Boston,
-# MA 02110-1335 USA.
-#
-# *****************************************************************************
+# This plugin was forked from https://github.com/alexbruy/qconsolidate
+# by Alexander Bruy (alexander.bruy@gmail.com),
+# starting from commit 6f27b0b14b925a25c75ea79aea62a0e3d51e30e3.
+
 
 import os
 import re
 
-from qgis.PyQt.QtCore import (QFileInfo,
+from qgis.PyQt.QtCore import (
                               QDir,
                               QFile,
+                              QFileInfo,
+                              Qt,
                               )
-from qgis.PyQt.QtGui import (QDialog,
+from qgis.PyQt.QtGui import (
+                             QApplication,
+                             QCheckBox,
+                             QCursor,
+                             QDialog,
                              QDialogButtonBox,
                              QFileDialog,
+                             QHBoxLayout,
+                             QLabel,
+                             QLineEdit,
                              QMessageBox,
-                             QApplication,
-                             # FIXME: needed if you can't compile the UI
-                             # QLabel,
-                             # QLineEdit,
-                             # QCheckBox,
+                             QProgressBar,
+                             QPushButton,
+                             QVBoxLayout,
                              )
 
 from qgis.core import QgsProject
 
-import consolidatethread
-from ui.ui_qconsolidatedialogbase import Ui_QConsolidateDialog
+from consolidatethread import ConsolidateThread
 
 
-class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
+class QConsolidateDialog(QDialog):
     def __init__(self, iface):
         QDialog.__init__(self)
-        self.setupUi(self)
+        self.initGui()
+
         self.iface = iface
 
         self.workThread = None
 
         self.btnOk = self.buttonBox.button(QDialogButtonBox.Ok)
         self.btnOk.setEnabled(False)
-        self.btnClose = self.buttonBox.button(QDialogButtonBox.Close)
-
-        # FIXME: this is needed if you can't compile the UI
-        # self.project_name_lbl = QLabel('Project name')
-        # self.project_name_le = QLineEdit()
-        # self.checkBoxZip = QCheckBox('Consolidate in a Zip file')
-        # self.layout().addWidget(self.project_name_lbl)
-        # self.layout().addWidget(self.project_name_le)
-        # self.layout().addWidget(self.checkBoxZip)
+        self.btnOk.clicked.connect(self.accept)
+        self.btnCancel = self.buttonBox.button(QDialogButtonBox.Cancel)
+        self.btnCancel.setEnabled(True)
+        self.btnCancel.clicked.connect(self.reject)
+        self.btnAbort = self.buttonBox.button(QDialogButtonBox.Abort)
+        self.btnAbort.setEnabled(False)
+        self.btnAbort.clicked.connect(self.stopProcessing)
 
         self.project_name_le.editingFinished.connect(
             self.on_project_name_editing_finished)
@@ -80,6 +80,38 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
             self.project_name_le.setText(project_name)
 
         self.btnBrowse.clicked.connect(self.setOutDirectory)
+
+    def initGui(self):
+        self.setWindowTitle('OQ-Consolidate')
+        self.project_name_lbl = QLabel('Project name')
+        self.project_name_le = QLineEdit()
+        self.checkBoxZip = QCheckBox('Consolidate in a Zip file')
+
+        self.label = QLabel("Output directory")
+        self.leOutputDir = QLineEdit()
+        self.btnBrowse = QPushButton("Browse...")
+        self.progressBar = QProgressBar()
+        self.buttonBox = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel |
+            QDialogButtonBox.Abort)
+
+        self.v_layout = QVBoxLayout()
+        self.setLayout(self.v_layout)
+
+        self.proj_name_hlayout = QHBoxLayout()
+        self.proj_name_hlayout.addWidget(self.project_name_lbl)
+        self.proj_name_hlayout.addWidget(self.project_name_le)
+        self.v_layout.addLayout(self.proj_name_hlayout)
+
+        self.h_layout = QHBoxLayout()
+        self.h_layout.addWidget(self.label)
+        self.h_layout.addWidget(self.leOutputDir)
+        self.h_layout.addWidget(self.btnBrowse)
+        self.v_layout.addLayout(self.h_layout)
+
+        self.v_layout.addWidget(self.checkBoxZip)
+        self.v_layout.addWidget(self.progressBar)
+        self.v_layout.addWidget(self.buttonBox)
 
     def on_project_name_editing_finished(self):
         try:
@@ -107,6 +139,8 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         self.leOutputDir.setText(outDir)
 
     def accept(self):
+        self.btnAbort.setEnabled(True)
+        self.btnCancel.setEnabled(False)
         project_name = self.project_name_le.text()
         if project_name.endswith('.qgs'):
             project_name = project_name[:-4]
@@ -114,6 +148,7 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
             QMessageBox.critical(
                 self, self.tr("OQ-Consolidate: Error"),
                 self.tr("Please specify the project name"))
+            self.restoreGui()
             return
 
         outputDir = self.leOutputDir.text()
@@ -121,6 +156,7 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
             QMessageBox.critical(
                 self, self.tr("OQ-Consolidate: Error"),
                 self.tr("Please specify the output directory."))
+            self.restoreGui()
             return
         outputDir = os.path.join(outputDir,
                                  get_valid_filename(project_name))
@@ -132,6 +168,7 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
                 QMessageBox.critical(
                     self, self.tr("OQ-Consolidate: Error"),
                     self.tr("Can't create directory to store the project."))
+                self.restoreGui()
                 return
 
         # create directory for layers if not exists
@@ -143,80 +180,84 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
                         " consolidate another project. Continue?"),
                 QMessageBox.Yes | QMessageBox.No)
             if res == QMessageBox.No:
+                self.restoreGui()
                 return
         else:
             if not d.mkdir("layers"):
                 QMessageBox.critical(
                     self, self.tr("OQ-Consolidate: Error"),
                     self.tr("Can't create directory for layers."))
+                self.restoreGui()
                 return
 
         # copy project file
         projectFile = QgsProject.instance().fileName()
-        if projectFile:
-            f = QFile(projectFile)
-            newProjectFile = os.path.join(outputDir,
-                                          '%s.qgs' % project_name)
-            f.copy(newProjectFile)
-        else:
-            newProjectFile = os.path.join(outputDir, '%s.qgs' % project_name)
-            f = QFileInfo(newProjectFile)
-            p = QgsProject.instance()
-            p.write(f)
+        try:
+            if projectFile:
+                f = QFile(projectFile)
+                newProjectFile = os.path.join(outputDir,
+                                              '%s.qgs' % project_name)
+                f.copy(newProjectFile)
+            else:
+                newProjectFile = os.path.join(
+                    outputDir, '%s.qgs' % project_name)
+                f = QFileInfo(newProjectFile)
+                p = QgsProject.instance()
+                p.write(f)
+        except Exception:
+            self.restoreGui()
+            raise
+            return
+
+        QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
 
         # start consolidate thread that does all real work
-        self.workThread = consolidatethread.ConsolidateThread(
+        self.workThread = ConsolidateThread(
             self.iface, outputDir, newProjectFile,
             self.checkBoxZip.isChecked())
-        self.workThread.rangeChanged.connect(self.setProgressRange)
-        self.workThread.updateProgress.connect(self.updateProgress)
-        self.workThread.processFinished.connect(self.processFinished)
-        self.workThread.processInterrupted.connect(self.processInterrupted)
-        self.workThread.processError.connect(self.processError)
-        self.workThread.exceptionOccurred.connect(self.exceptionOccurred)
+        self.workThread.rangeChanged.connect(self.on_rangeChanged)
+        self.workThread.updateProgress.connect(self.on_updateProgress)
+        self.workThread.processFinished.connect(self.on_processFinished)
+        self.workThread.processInterrupted.connect(self.on_processInterrupted)
+        self.workThread.processError.connect(self.on_processError)
+        self.workThread.exceptionOccurred.connect(self.on_exceptionOccurred)
 
-        self.btnClose.setText(self.tr("Cancel"))
         self.btnOk.setEnabled(False)
-        self.buttonBox.rejected.disconnect(self.reject)
-        self.btnClose.clicked.connect(self.stopProcessing)
 
         self.workThread.start()
 
-    def reject(self):
-        QDialog.reject(self)
-
-    def setProgressRange(self, maxValue):
+    def on_rangeChanged(self, maxValue):
         self.progressBar.setRange(0, maxValue)
         self.progressBar.setValue(0)
 
-    def updateProgress(self):
+    def on_updateProgress(self):
         self.progressBar.setValue(self.progressBar.value() + 1)
 
-    def processFinished(self):
+    def on_processFinished(self):
         self.stopProcessing()
+        QApplication.restoreOverrideCursor()
         QMessageBox.information(self,
                                 self.tr("OQ-Consolidate: Info"),
                                 'Consolidation complete.'
                                 )
+        super(QConsolidateDialog, self).accept()
+
+    def on_processInterrupted(self):
+        self.stopProcessing()
         self.restoreGui()
 
-    def processInterrupted(self):
+    def on_processError(self, message):
         self.restoreGui()
-
-    def processError(self, message):
         QMessageBox.critical(self,
                              self.tr("OQ-Consolidate: Error"),
                              message
                              )
         self.stopProcessing()
-        self.restoreGui()
-        return
 
-    def exceptionOccurred(self, message):
+    def on_exceptionOccurred(self, message):
+        self.restoreGui()
         QMessageBox.critical(self, self.tr("OQ-Consolidate: Error"), message)
         self.stopProcessing()
-        self.restoreGui()
-        return
 
     def stopProcessing(self):
         if self.workThread is not None:
@@ -228,8 +269,8 @@ class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
         self.progressBar.setValue(0)
 
         QApplication.restoreOverrideCursor()
-        self.buttonBox.rejected.connect(self.reject)
-        self.btnClose.setText(self.tr("Close"))
+        self.btnAbort.setEnabled(False)
+        self.btnCancel.setEnabled(True)
         self.set_ok_button()
 
 
