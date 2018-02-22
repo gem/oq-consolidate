@@ -58,32 +58,6 @@ class QConsolidatePlugin:
 
         self.qgsVersion = unicode(QGis.QGIS_VERSION_INT)
 
-        # For i18n support
-        userPluginPath = (QFileInfo(QgsApplication.qgisUserDbFilePath()).path()
-                          + "/python/plugins/qconsolidate")
-        systemPluginPath = (
-            QgsApplication.prefixPath() + "/python/plugins/qconsolidate")
-
-        overrideLocale = QSettings().value(
-            "locale/overrideFlag", False, type=bool)
-        if not overrideLocale:
-            localeFullName = QLocale.system().name()
-        else:
-            localeFullName = QSettings().value("locale/userLocale", "")
-
-        if QFileInfo(userPluginPath).exists():
-            translationPath = (userPluginPath + "/i18n/qconsolidate_"
-                               + localeFullName + ".qm")
-        else:
-            translationPath = (systemPluginPath + "/i18n/qconsolidate_"
-                               + localeFullName + ".qm")
-
-        self.localePath = translationPath
-        if QFileInfo(self.localePath).exists():
-            self.translator = QTranslator()
-            self.translator.load(self.localePath)
-            QCoreApplication.installTranslator(self.translator)
-
     def initGui(self):
         if int(self.qgsVersion) < 20000:
             qgisVersion = (self.qgsVersion[0] + "."
