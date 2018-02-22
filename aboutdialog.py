@@ -2,12 +2,20 @@
 
 # *****************************************************************************
 #
-# QConsolidate
+# OQ-Consolidate
 # ---------------------------------------------------------
-# Consolidates all layers from current QGIS project into one directory and
-# creates copy of current project using this consolidated layers.
+# OQ-Consolidate is a modified version of QConsolidate, that:
 #
-# Copyright (C) 2012-2013 Alexander Bruy (alexander.bruy@gmail.com)
+# * saves raster layers and converts vector layers to GeoPackage.
+# * creates a project if it does not exist yet
+# * allows to give a customized (validated) name to the consolidated project
+# * allows to store all the project files in a zip file
+#
+# This plugin was forked from https://github.com/alexbruy/qconsolidate
+# by Alexander Bruy (alexander.bruy@gmail.com),
+# starting from commit 6f27b0b14b925a25c75ea79aea62a0e3d51e30e3.
+
+# Copyright (C) 2018 by GEM Foundation (devops@openquake.org)
 #
 # This source is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free
