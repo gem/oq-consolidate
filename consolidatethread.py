@@ -220,6 +220,11 @@ class ConsolidateThread(QThread):
         crs = vLayer.crs()
         enc = vLayer.dataProvider().encoding()
         outFile = "%s/%s.gpkg" % (self.layersDir, layerName)
+
+        # TODO: If it's already a geopackage, we chould just copy it instead of
+        #       converting it
+        #       (if vLayer.dataProvider().storageType() == 'GPKG':)
+
         error = QgsVectorFileWriter.writeAsVectorFormat(vLayer, outFile, enc,
                                                         crs, 'GPKG')
         if error != QgsVectorFileWriter.NoError:
