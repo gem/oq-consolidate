@@ -21,6 +21,7 @@
 # starting from commit 6f27b0b14b925a25c75ea79aea62a0e3d51e30e3.
 
 
+from builtins import str
 import os
 import re
 
@@ -48,7 +49,7 @@ from qgis.PyQt.QtGui import (
 
 from qgis.core import QgsProject
 
-from consolidatethread import ConsolidateThread
+from .consolidatethread import ConsolidateThread
 
 
 class QConsolidateDialog(QDialog):
@@ -284,5 +285,5 @@ def get_valid_filename(s):
     >>> get_valid_filename("john's portrait in 2004.jpg")
     'johns_portrait_in_2004.jpg'
     """
-    s = str(s).strip().replace(' ', '_')
+    s = str(s).strip().replace(' ', '_')  # FIXME: str
     return re.sub(r'(?u)[^-\w.]', '', s)

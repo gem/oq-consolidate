@@ -22,7 +22,7 @@
 
 
 import os
-import ConfigParser
+import configparser
 
 from qgis.PyQt.QtCore import (
                               QUrl,
@@ -49,7 +49,7 @@ class AboutDialog(QDialog):
 
         self.lblLogo.setPixmap(QPixmap(":/icons/qconsolidate.png"))
 
-        cfg = ConfigParser.SafeConfigParser()
+        cfg = configparser.SafeConfigParser()
         cfg.read(os.path.join(os.path.dirname(__file__), "metadata.txt"))
         version = cfg.get("general", "version")
 

@@ -22,5 +22,5 @@
 
 
 def classFactory(iface):
-    from qconsolidate import QConsolidatePlugin
+    from .qconsolidate import QConsolidatePlugin
     return QConsolidatePlugin(iface)

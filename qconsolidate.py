@@ -21,6 +21,8 @@
 # starting from commit 6f27b0b14b925a25c75ea79aea62a0e3d51e30e3.
 
 
+from builtins import str
+from builtins import object
 import qgis  # NOQA
 
 from qgis.PyQt.QtCore import QCoreApplication
@@ -32,17 +34,17 @@ from qgis.PyQt.QtGui import (
 
 from qgis.core import QGis
 
-import qconsolidatedialog
-import aboutdialog
+from . import qconsolidatedialog
+from . import aboutdialog
 
-import resources_rc  # NOQA
+from . import resources_rc  # NOQA
 
 
-class QConsolidatePlugin:
+class QConsolidatePlugin(object):
     def __init__(self, iface):
         self.iface = iface
 
-        self.qgsVersion = unicode(QGis.QGIS_VERSION_INT)
+        self.qgsVersion = str(QGis.QGIS_VERSION_INT)  # FIXME: unicode
 
     def initGui(self):
         if int(self.qgsVersion) < 20000:
