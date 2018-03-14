@@ -29,15 +29,17 @@ from qgis.PyQt.QtCore import (
                               )
 from qgis.PyQt.QtGui import (
                              QDesktopServices,
-                             QDialog,
-                             QDialogButtonBox,
-                             QHBoxLayout,
-                             QLabel,
                              QPixmap,
-                             QTextBrowser,
                              QTextDocument,
-                             QVBoxLayout,
                              )
+from qgis.PyQt.QtWidgets import (
+                                 QDialog,
+                                 QDialogButtonBox,
+                                 QLabel,
+                                 QTextBrowser,
+                                 QHBoxLayout,
+                                 QVBoxLayout,
+                                )
 
 
 class AboutDialog(QDialog):

@@ -32,20 +32,22 @@ from qgis.PyQt.QtCore import (
                               Qt,
                               )
 from qgis.PyQt.QtGui import (
-                             QApplication,
-                             QCheckBox,
                              QCursor,
-                             QDialog,
-                             QDialogButtonBox,
-                             QFileDialog,
-                             QHBoxLayout,
-                             QLabel,
-                             QLineEdit,
-                             QMessageBox,
-                             QProgressBar,
-                             QPushButton,
-                             QVBoxLayout,
                              )
+from qgis.PyQt.QtWidgets import (
+                                 QApplication,
+                                 QCheckBox,
+                                 QDialog,
+                                 QDialogButtonBox,
+                                 QFileDialog,
+                                 QLabel,
+                                 QLineEdit,
+                                 QMessageBox,
+                                 QProgressBar,
+                                 QPushButton,
+                                 QHBoxLayout,
+                                 QVBoxLayout,
+                                 )
 
 from qgis.core import QgsProject
 

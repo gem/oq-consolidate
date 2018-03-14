@@ -26,13 +26,13 @@ from builtins import object
 import qgis  # NOQA
 
 from qgis.PyQt.QtCore import QCoreApplication
-from qgis.PyQt.QtGui import (
-                             QMessageBox,
-                             QAction,
-                             QIcon,
-                             )
+from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtWidgets import (
+                                 QMessageBox,
+                                 QAction,
+                                 )
 
-from qgis.core import QGis
+from qgis.core import Qgis
 
 from . import qconsolidatedialog
 from . import aboutdialog
@@ -44,7 +44,7 @@ class QConsolidatePlugin(object):
     def __init__(self, iface):
         self.iface = iface
 
-        self.qgsVersion = str(QGis.QGIS_VERSION_INT)  # FIXME: unicode
+        self.qgsVersion = str(Qgis.QGIS_VERSION_INT)  # FIXME: unicode
 
     def initGui(self):
         if int(self.qgsVersion) < 20000:
