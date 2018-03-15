@@ -35,7 +35,7 @@ from qgis.PyQt.QtCore import (QThread,
                               )
 from qgis.PyQt.QtXml import QDomDocument
 
-from qgis.core import QgsMapLayer, QgsVectorFileWriter
+from qgis.core import QgsMapLayer, QgsVectorFileWriter, QgsProject
 
 from osgeo import gdal
 from shutil import copyfile
@@ -91,13 +91,13 @@ class ConsolidateThread(QThread):
         e = root.firstChildElement("projectlayers")
 
         # process layers
-        layers = self.iface.legendInterface().layers()
+        layers = QgsProject.instance().mapLayers()
         self.rangeChanged.emit(len(layers))
 
         # keep full paths of exported layer files (used to zip files)
         outFiles = [self.projectFile]
 
-        for layer in layers:
+        for layer in layers.values():
             if not layer.isValid():
                 self.processError.emit(
                     "Layer %s is invalid" % layer.name())
@@ -225,10 +225,10 @@ class ConsolidateThread(QThread):
         #       converting it
         #       (if vLayer.dataProvider().storageType() == 'GPKG':)
 
-        error = QgsVectorFileWriter.writeAsVectorFormat(vLayer, outFile, enc,
-                                                        crs, 'GPKG')
+        error, error_msg = QgsVectorFileWriter.writeAsVectorFormat(
+            vLayer, outFile, enc, crs, 'GPKG')
         if error != QgsVectorFileWriter.NoError:
-            msg = self.tr("Cannot copy layer %s") % layerName
+            msg = self.tr("Cannot copy layer %s: %s") % (layerName, error_msg)
             self.processError.emit(msg)
             return
 
