@@ -23,10 +23,10 @@ lang: $(LANG_FILES)
 res: $(RES_FILES)
 
 $(UI_FILES): $(UI_PATH)/ui_%.py: $(UI_PATH)/%.ui
-	pyuic4 -d -o $@ $<
+	pyuic5 -d -o $@ $<
 
 $(RES_FILES): $(RES_PATH)/%_rc.py: $(RES_PATH)/%.qrc
-	pyrcc4 -o $@ $<
+	pyrcc5 -o $@ $<
 
 pep8:
 	@echo
