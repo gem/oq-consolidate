@@ -24,6 +24,8 @@
 from builtins import str
 import os
 import re
+import sys
+import traceback
 
 from qgis.PyQt.QtCore import (
                               QDir,
@@ -52,6 +54,7 @@ from qgis.PyQt.QtWidgets import (
 from qgis.core import QgsProject
 
 from .consolidatethread import ConsolidateThread
+from .utils import log_msg, tr
 
 
 class QConsolidateDialog(QDialog):
@@ -148,17 +151,15 @@ class QConsolidateDialog(QDialog):
         if project_name.endswith('.qgs'):
             project_name = project_name[:-4]
         if not project_name:
-            QMessageBox.critical(
-                self, self.tr("OQ-Consolidate: Error"),
-                self.tr("Please specify the project name"))
+            msg = tr("Please specify the project name")
+            log_msg(msg, level='C', message_bar=self.iface.messageBar())
             self.restoreGui()
             return
 
         outputDir = self.leOutputDir.text()
         if not outputDir:
-            QMessageBox.critical(
-                self, self.tr("OQ-Consolidate: Error"),
-                self.tr("Please specify the output directory."))
+            msg = tr("Please specify the output directory.")
+            log_msg(msg, level='C', message_bar=self.iface.messageBar())
             self.restoreGui()
             return
         outputDir = os.path.join(outputDir,
@@ -168,9 +169,8 @@ class QConsolidateDialog(QDialog):
         d = QDir(outputDir)
         if not d.exists():
             if not d.mkpath("."):
-                QMessageBox.critical(
-                    self, self.tr("OQ-Consolidate: Error"),
-                    self.tr("Can't create directory to store the project."))
+                msg = tr("Can't create directory to store the project.")
+                log_msg(msg, level='C', message_bar=self.iface.messageBar())
                 self.restoreGui()
                 return
 
@@ -187,9 +187,8 @@ class QConsolidateDialog(QDialog):
                 return
         else:
             if not d.mkdir("layers"):
-                QMessageBox.critical(
-                    self, self.tr("OQ-Consolidate: Error"),
-                    self.tr("Can't create directory for layers."))
+                msg = tr("Can't create directory for layers.")
+                log_msg(msg, level='C', message_bar=self.iface.messageBar())
                 self.restoreGui()
                 return
 
@@ -204,12 +203,14 @@ class QConsolidateDialog(QDialog):
             else:
                 newProjectFile = os.path.join(
                     outputDir, '%s.qgs' % project_name)
-                f = QFileInfo(newProjectFile)
                 p = QgsProject.instance()
-                p.write(f)
+                p.write(newProjectFile)
         except Exception:
             self.restoreGui()
-            raise
+            ex_type, ex, tb = sys.exc_info()
+            tb_str = ''.join(traceback.format_tb(tb))
+            msg = "%s:\n\n%s" % (ex_type.__name__, tb_str)
+            log_msg(msg, level='C', message_bar=self.iface.messageBar())
             return
 
         QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
@@ -239,10 +240,8 @@ class QConsolidateDialog(QDialog):
     def on_processFinished(self):
         self.stopProcessing()
         QApplication.restoreOverrideCursor()
-        QMessageBox.information(self,
-                                self.tr("OQ-Consolidate: Info"),
-                                'Consolidation complete.'
-                                )
+        msg = 'Consolidation complete.'
+        log_msg(msg, level='S', message_bar=self.iface.messageBar())
         super(QConsolidateDialog, self).accept()
 
     def on_processInterrupted(self):
@@ -251,15 +250,12 @@ class QConsolidateDialog(QDialog):
 
     def on_processError(self, message):
         self.restoreGui()
-        QMessageBox.critical(self,
-                             self.tr("OQ-Consolidate: Error"),
-                             message
-                             )
+        log_msg(message, level='C', message_bar=self.iface.messageBar())
         self.stopProcessing()
 
     def on_exceptionOccurred(self, message):
         self.restoreGui()
-        QMessageBox.critical(self, self.tr("OQ-Consolidate: Error"), message)
+        log_msg(message, level='C', message_bar=self.iface.messageBar())
         self.stopProcessing()
 
     def stopProcessing(self):

@@ -27,15 +27,13 @@ import qgis  # NOQA
 
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import (
-                                 QMessageBox,
-                                 QAction,
-                                 )
+from qgis.PyQt.QtWidgets import QAction
 
 from qgis.core import Qgis
 
 from . import qconsolidatedialog
 from . import aboutdialog
+from .utils import log_msg, tr
 
 from . import resources_rc  # NOQA
 
@@ -51,16 +49,10 @@ class QConsolidatePlugin(object):
             qgisVersion = (self.qgsVersion[0] + "."
                            + self.qgsVersion[2] + "."
                            + self.qgsVersion[3])
-            QMessageBox.warning(
-                self.iface.mainWindow(),
-                "OQ-Consolidate",
-                QCoreApplication.translate(
-                    "OQ-Consolidate",
-                    "QGIS %s detected.\n") % (qgisVersion) +
-                QCoreApplication.translate(
-                    "OQ-Consolidate",
-                    ("This version of OQ-Consolidate requires at least"
-                        " QGIS version 2.0.\nPlugin will not be enabled.")))
+            msg = tr("QGIS %s detected.\n" % qgisVersion)
+            msg += tr("This version of OQ-Consolidate requires at least"
+                      " QGIS version 3.0.\nPlugin will not be enabled.")
+            log_msg(msg, level='C', message_bar=self.iface.messageBar())
             return None
 
         self.actionRun = QAction(
