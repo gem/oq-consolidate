@@ -90,8 +90,8 @@ class QConsolidatePlugin(object):
         self.iface.removeToolBarIcon(self.actionRun)
 
     def run(self):
-        dlg = qconsolidatedialog.QConsolidateDialog(self.iface)
-        dlg.exec_()
+        self.dlg = qconsolidatedialog.QConsolidateDialog()
+        self.dlg.show()
 
     def about(self):
         dlg = aboutdialog.AboutDialog()

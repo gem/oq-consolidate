@@ -20,62 +20,61 @@
 # by Alexander Bruy (alexander.bruy@gmail.com),
 # starting from commit 6f27b0b14b925a25c75ea79aea62a0e3d51e30e3.
 
-
 import sys
 import traceback
 import os
 import zipfile
 
-from qgis.PyQt.QtCore import (QThread,
-                              pyqtSignal,
-                              QMutex,
+from qgis.PyQt.QtCore import (
                               QIODevice,
                               QTextStream,
                               QFile,
                               )
 from qgis.PyQt.QtXml import QDomDocument
 
-from qgis.core import QgsMapLayer, QgsVectorFileWriter, QgsProject
+from qgis.core import (
+                       QgsMapLayer,
+                       QgsVectorFileWriter,
+                       QgsProject,
+                       QgsTask,
+                       )
+from qgis.utils import iface
 
 from osgeo import gdal
 from shutil import copyfile
+from .utils import log_msg
 
 
-class ConsolidateThread(QThread):
-    processError = pyqtSignal(str)
-    rangeChanged = pyqtSignal(int)
-    updateProgress = pyqtSignal()
-    processFinished = pyqtSignal()
-    processInterrupted = pyqtSignal()
-    exceptionOccurred = pyqtSignal(str)
+class ConsolidateThread(QgsTask):
 
-    def __init__(self, iface, outputDir, projectFile, saveToZip):
-        QThread.__init__(self, QThread.currentThread())
-        self.mutex = QMutex()
-        self.stopMe = 0
-
-        self.iface = iface
+    def __init__(self, description, flags, outputDir, projectFile, saveToZip):
+        super().__init__(description, flags)
         self.outputDir = outputDir
         self.layersDir = outputDir + "/layers"
         self.projectFile = projectFile
         self.saveToZip = saveToZip
+        self.progressRange = None
 
     def run(self):
         try:
             self.consolidate()
-        except Exception:
-            ex_type, ex, tb = sys.exc_info()
-            tb_str = ''.join(traceback.format_tb(tb))
-            msg = "%s:\n\n%s" % (ex_type.__name__, tb_str)
-            self.exceptionOccurred.emit(msg)
+        except Exception as exc:
+            self.exception = exc
+            return False
+        else:
+            return True
+
+    def finished(self, success):
+        if success:
+            msg = 'Consolidation complete.'
+            log_msg(msg, level='S', message_bar=iface.messageBar())
+        else:
+            if self.exception is not None:
+                ex_type, ex, tb = sys.exc_info()
+                msg = ''.join(traceback.format_exception(ex_type, ex, tb))
+                log_msg(msg, level='C', message_bar=iface.messageBar())
 
     def consolidate(self):
-        self.mutex.lock()
-        self.stopMe = 0
-        self.mutex.unlock()
-
-        interrupted = False
-
         gdal.AllRegister()
 
         # read project
@@ -92,81 +91,61 @@ class ConsolidateThread(QThread):
 
         # process layers
         layers = QgsProject.instance().mapLayers()
-        self.rangeChanged.emit(len(layers))
+        self.progressRange = len(layers)
+        self.setProgress(1.0)
 
         # keep full paths of exported layer files (used to zip files)
         outFiles = [self.projectFile]
 
-        for layer in layers.values():
+        for i, layer in enumerate(layers.values()):
             if not layer.isValid():
-                self.processError.emit(
-                    "Layer %s is invalid" % layer.name())
-                return
+                raise Exception("Layer %s is invalid" % layer.name())
+            lType = layer.type()
+            lProviderType = layer.providerType()
+            lName = layer.name()
+            lUri = layer.dataProvider().dataSourceUri()
+            if lType == QgsMapLayer.VectorLayer:
+                # Always convert to GeoPackage
+                outFile = self.convertGenericVectorLayer(
+                    e, layer, lName)
+                outFiles.append(outFile)
+            elif lType == QgsMapLayer.RasterLayer:
+                if lProviderType == 'gdal':
+                    if self.checkGdalWms(lUri):
+                        outFile = self.copyXmlRasterLayer(
+                            e, layer, lName)
+                        outFiles.append(outFile)
             else:
-                lType = layer.type()
-                lProviderType = layer.providerType()
-                lName = layer.name()
-                lUri = layer.dataProvider().dataSourceUri()
-                if lType == QgsMapLayer.VectorLayer:
-                    # Always convert to GeoPackage
-                    outFile = self.convertGenericVectorLayer(
-                        e, layer, lName)
-                    outFiles.append(outFile)
-                elif lType == QgsMapLayer.RasterLayer:
-                    if lProviderType == 'gdal':
-                        if self.checkGdalWms(lUri):
-                            outFile = self.copyXmlRasterLayer(
-                                e, layer, lName)
-                            outFiles.append(outFile)
-                else:
-                    self.processError.emit(
-                        'Layer %s (type %s) is not supported'
-                        % (lName, lType))
-                    return
-
-            self.updateProgress.emit()
-            self.mutex.lock()
-            s = self.stopMe
-            self.mutex.unlock()
-            if s == 1:
-                interrupted = True
-                break
+                raise Exception('Layer %s (type %s) is not supported'
+                                % (lName, lType))
+            if self.isCanceled():
+                raise Exception('Consolidation canceled')
+            self.setProgress(i / self.progressRange * 100)
 
         # save updated project
         self.saveProject(doc)
 
         if self.saveToZip:
-            self.rangeChanged.emit(len(outFiles))
+            self.progressRange = len(outFiles)
+            self.setProgress(1.0)
             # strip .qgs from the project name
             self.zipfiles(outFiles, self.projectFile[:-4])
 
-        if not interrupted:
-            self.processFinished.emit()
-        else:
-            self.processInterrupted.emit()
-
-    def stop(self):
-        self.mutex.lock()
-        self.stopMe = 1
-        self.mutex.unlock()
-
-        QThread.wait(self)
+        return True
 
     def loadProject(self):
         f = QFile(self.projectFile)
         if not f.open(QIODevice.ReadOnly | QIODevice.Text):
             msg = self.tr("Cannot read file %s:\n%s.") % (self.projectFile,
                                                           f.errorString())
-            self.processError.emit(msg)
-            return
+            raise Exception(msg)
 
         doc = QDomDocument()
         setOk, errorString, errorLine, errorColumn = doc.setContent(f, True)
         if not setOk:
             msg = (self.tr("Parse error at line %d, column %d:\n%s")
                    % (errorLine, errorColumn, errorString))
-            self.processError.emit(msg)
-            return
+            raise Exception(msg)
 
         f.close()
         return doc
@@ -176,8 +155,7 @@ class ConsolidateThread(QThread):
         if not f.open(QIODevice.WriteOnly | QIODevice.Text):
             msg = self.tr("Cannot write file %s:\n%s.") % (self.projectFile,
                                                            f.errorString())
-            self.processError.emit(msg)
-            return
+            raise Exception(msg)
 
         out = QTextStream(f)
         doc.save(out, 4)
@@ -194,9 +172,9 @@ class ConsolidateThread(QThread):
             os.path.commonprefix([os.path.dirname(f) for f in file_paths]))
         with zipfile.ZipFile(
                 archive, 'w', zipfile.ZIP_DEFLATED, allowZip64=True) as z:
-            for f in file_paths:
+            for i, f in enumerate(file_paths):
                 z.write(f, f[prefix:])
-                self.updateProgress.emit()
+                self.setProgress(i / self.progressRange * 100)
 
     def copyXmlRasterLayer(self, layerElement, vLayer, layerName):
         outFile = "%s/%s.xml" % (self.layersDir, layerName)
@@ -204,8 +182,7 @@ class ConsolidateThread(QThread):
             copyfile(vLayer.dataProvider().dataSourceUri(), outFile)
         except IOError:
             msg = self.tr("Cannot copy layer %s") % layerName
-            self.processError.emit(msg)
-            return
+            raise Exception(msg)
 
         # update project
         layerNode = self.findLayerInProject(layerElement, layerName)
@@ -229,8 +206,7 @@ class ConsolidateThread(QThread):
             vLayer, outFile, enc, crs, 'GPKG')
         if error != QgsVectorFileWriter.NoError:
             msg = self.tr("Cannot copy layer %s: %s") % (layerName, error_msg)
-            self.processError.emit(msg)
-            return
+            raise Exception(msg)
 
         # update project
         layerNode = self.findLayerInProject(layerElement, layerName)
