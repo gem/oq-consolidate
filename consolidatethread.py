@@ -20,8 +20,6 @@
 # by Alexander Bruy (alexander.bruy@gmail.com),
 # starting from commit 6f27b0b14b925a25c75ea79aea62a0e3d51e30e3.
 
-import sys
-import traceback
 import os
 import zipfile
 
@@ -70,9 +68,9 @@ class ConsolidateThread(QgsTask):
             log_msg(msg, level='S', message_bar=iface.messageBar())
         else:
             if self.exception is not None:
-                ex_type, ex, tb = sys.exc_info()
-                msg = ''.join(traceback.format_exception(ex_type, ex, tb))
-                log_msg(msg, level='C', message_bar=iface.messageBar())
+                log_msg(str(self.exception), level='C',
+                        message_bar=iface.messageBar(),
+                        exception=self.exception)
 
     def consolidate(self):
         gdal.AllRegister()

@@ -24,8 +24,6 @@
 from builtins import str
 import os
 import re
-import sys
-import traceback
 
 from qgis.PyQt.QtCore import (
                               QDir,
@@ -192,12 +190,11 @@ class QConsolidateDialog(QDialog):
                     outputDir, '%s.qgs' % project_name)
                 p = QgsProject.instance()
                 p.write(newProjectFile)
-        except Exception:
+        except Exception as exc:
             self.restoreGui()
-            ex_type, ex, tb = sys.exc_info()
-            msg = ''.join(traceback.format_exception(ex_type, ex, tb))
-            log_msg(msg, level='C', message_bar=iface.messageBar())
-            log_msg(msg, level='C', message_bar=iface.messageBar())
+            log_msg(str(exc), level='C',
+                    message_bar=iface.messageBar(),
+                    exception=exc)
             return
 
         # start consolidate thread that does all real work

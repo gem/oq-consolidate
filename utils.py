@@ -21,6 +21,7 @@
 # starting from commit 6f27b0b14b925a25c75ea79aea62a0e3d51e30e3.
 
 
+import traceback
 import sys
 from qgis.PyQt.QtWidgets import QApplication
 from qgis.PyQt.QtCore import QSettings
@@ -28,7 +29,7 @@ from qgis.core import Qgis, QgsMessageLog
 
 
 def log_msg(message, tag='OQ-Consolidate', level='I', message_bar=None,
-            duration=None):
+            duration=None, exception=None):
     """
     Add a message to the QGIS message log. If a messageBar is provided,
     the same message will be displayed also in the messageBar. In the latter
@@ -45,8 +46,10 @@ def log_msg(message, tag='OQ-Consolidate', level='I', message_bar=None,
         'S' -> Qgis.Success,
     :param message_bar: a `QgsMessageBar` instance
     :param duration: how long (in seconds) the message will be displayed (use 0
-                     to keep the message visible indefinitely, or None to use
-                     the default duration of the chosen level
+        to keep the message visible indefinitely, or None to use
+        the default duration of the chosen level
+    :param exception: an optional exception, from which the traceback will be
+        extracted and written only in the log
     """
     levels = {
               'I': Qgis.Info,
@@ -56,6 +59,11 @@ def log_msg(message, tag='OQ-Consolidate', level='I', message_bar=None,
               }
     if level not in levels:
         raise ValueError('Level must be one of %s' % levels.keys())
+    tb_text = ''
+    if exception is not None:
+        tb_lines = traceback.format_exception(
+            exception.__class__, exception, exception.__traceback__)
+        tb_text = '\n' + ''.join(tb_lines)
 
     # if we are running nosetests, exit on critical errors
     if 'nose' in sys.modules and level == 'C':
@@ -66,7 +74,7 @@ def log_msg(message, tag='OQ-Consolidate', level='I', message_bar=None,
                 or level == 'W' and log_verbosity in ('S', 'I', 'W')
                 or level in ('I', 'S') and log_verbosity in ('I', 'S')):
             QgsMessageLog.logMessage(
-                tr(message), tr(tag), levels[level])
+                tr(message) + tb_text, tr(tag), levels[level])
         if message_bar is not None:
             if level == 'I':
                 title = 'Info'
