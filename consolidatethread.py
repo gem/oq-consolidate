@@ -96,6 +96,8 @@ class ConsolidateThread(QgsTask):
 
         # keep full paths of exported layer files (used to zip files)
         outFiles = [self.projectFile]
+        if self.isCanceled():
+            raise Exception('Consolidation canceled')
 
         for i, layer in enumerate(layers.values()):
             if not layer.isValid():
@@ -118,9 +120,9 @@ class ConsolidateThread(QgsTask):
             else:
                 raise Exception('Layer %s (type %s) is not supported'
                                 % (lName, lType))
+            self.setProgress(i / self.progressRange * 100)
             if self.isCanceled():
                 raise Exception('Consolidation canceled')
-            self.setProgress(i / self.progressRange * 100)
 
         # save updated project
         self.saveProject(doc)
@@ -167,6 +169,8 @@ class ConsolidateThread(QgsTask):
         :param file_paths: list of path names
         :param archive: path of the archive
         """
+        if self.isCanceled():
+            raise Exception('Consolidation canceled')
         archive = "%s.zip" % archive
         prefix = len(
             os.path.commonprefix([os.path.dirname(f) for f in file_paths]))
@@ -175,6 +179,8 @@ class ConsolidateThread(QgsTask):
             for i, f in enumerate(file_paths):
                 z.write(f, f[prefix:])
                 self.setProgress(i / self.progressRange * 100)
+                if self.isCanceled():
+                    raise Exception('Consolidation canceled')
 
     def copyXmlRasterLayer(self, layerElement, vLayer, layerName):
         outFile = "%s/%s.xml" % (self.layersDir, layerName)
