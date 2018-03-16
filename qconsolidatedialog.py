@@ -201,11 +201,14 @@ class QConsolidateDialog(QDialog):
         self.workThread = ConsolidateThread(
             'Consolidating', QgsTask.CanCancel, outputDir, newProjectFile,
             self.checkBoxZip.isChecked())
+        self.workThread.begun.connect(self.on_consolidation_begun)
 
         QgsApplication.taskManager().addTask(self.workThread)
+        super().accept()
+
+    def on_consolidation_begun(self):
         log_msg("Consolidation started.", level='I', duration=4,
                 message_bar=iface.messageBar())
-        super().accept()
 
     def restoreGui(self):
         self.btnCancel.setEnabled(True)
