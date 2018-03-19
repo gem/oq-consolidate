@@ -43,7 +43,7 @@ from shutil import copyfile
 from .utils import log_msg
 
 
-class ConsolidateThread(QgsTask):
+class ConsolidateTask(QgsTask):
 
     def __init__(self, description, flags, outputDir, projectFile, saveToZip):
         super().__init__(description, flags)
