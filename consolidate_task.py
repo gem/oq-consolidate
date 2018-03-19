@@ -51,7 +51,7 @@ class ConsolidateTask(QgsTask):
         self.layersDir = outputDir + "/layers"
         self.projectFile = projectFile
         self.saveToZip = saveToZip
-        self.progressRange = None
+        self.progressMax = None
         self.setDependentLayers(QgsProject.instance().mapLayers().values())
 
     def run(self):
@@ -90,7 +90,7 @@ class ConsolidateTask(QgsTask):
 
         # process layers
         layers = QgsProject.instance().mapLayers()
-        self.progressRange = len(layers)
+        self.progressMax = len(layers)
         self.setProgress(1.0)
 
         # keep full paths of exported layer files (used to zip files)
@@ -119,7 +119,7 @@ class ConsolidateTask(QgsTask):
             else:
                 raise Exception('Layer %s (type %s) is not supported'
                                 % (lName, lType))
-            self.setProgress(i / self.progressRange * 100)
+            self.setProgress(i / self.progressMax * 100)
             if self.isCanceled():
                 raise Exception('Consolidation canceled')
 
@@ -127,7 +127,7 @@ class ConsolidateTask(QgsTask):
         self.saveProject(doc)
 
         if self.saveToZip:
-            self.progressRange = len(outFiles)
+            self.progressMax = len(outFiles)
             self.setProgress(1.0)
             # strip .qgs from the project name
             self.zipfiles(outFiles, self.projectFile[:-4])
@@ -177,7 +177,7 @@ class ConsolidateTask(QgsTask):
                 archive, 'w', zipfile.ZIP_DEFLATED, allowZip64=True) as z:
             for i, f in enumerate(file_paths):
                 z.write(f, f[prefix:])
-                self.setProgress(i / self.progressRange * 100)
+                self.setProgress(i / self.progressMax * 100)
                 if self.isCanceled():
                     raise Exception('Consolidation canceled')
 
