@@ -56,7 +56,7 @@ class QConsolidatePlugin(object):
             return None
 
         self.actionRun = QAction(
-            QIcon(":/icons/oq_consolidate.png"),
+            QIcon(":/icons/qconsolidate.png"),
             "OQ-Consolidate",
             self.iface.mainWindow())
         self.actionRun.setStatusTip(
