@@ -119,6 +119,7 @@ class ConsolidateTask(QgsTask):
                     e, layer, lName)
                 outFiles.append(outFile)
             elif lType == QgsMapLayer.RasterLayer:
+                # FIXME: should we convert also this to GeoPackage?
                 if lProviderType == 'gdal':
                     if self.checkGdalWms(lUri):
                         outFile = self.copyXmlRasterLayer(
