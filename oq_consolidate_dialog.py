@@ -199,7 +199,7 @@ class QConsolidateDialog(QDialog):
 
         # start consolidate task that does all real work
         self.consolidateTask = ConsolidateTask(
-            'Consolidating', QgsTask.CanCancel, outputDir, newProjectFile,
+            'Consolidation', QgsTask.CanCancel, outputDir, newProjectFile,
             self.checkBoxZip.isChecked())
         self.consolidateTask.begun.connect(self.on_consolidation_begun)
 
