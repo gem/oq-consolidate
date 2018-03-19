@@ -46,7 +46,7 @@ from qgis.PyQt.QtWidgets import (
 from qgis.core import QgsProject, QgsApplication, QgsTask
 from qgis.utils import iface
 
-from .consolidatethread import ConsolidateThread
+from .consolidatethread import ConsolidateTask
 from .utils import log_msg, tr
 
 
@@ -55,7 +55,7 @@ class QConsolidateDialog(QDialog):
         QDialog.__init__(self)
         self.initGui()
 
-        self.workThread = None
+        self.consolidateTask = None
 
         self.btnOk = self.buttonBox.button(QDialogButtonBox.Ok)
         self.btnOk.setEnabled(False)
@@ -201,9 +201,9 @@ class QConsolidateDialog(QDialog):
         self.consolidateTask = ConsolidateTask(
             'Consolidation', QgsTask.CanCancel, outputDir, newProjectFile,
             self.checkBoxZip.isChecked())
-        self.workThread.begun.connect(self.on_consolidation_begun)
+        self.consolidateTask.begun.connect(self.on_consolidation_begun)
 
-        QgsApplication.taskManager().addTask(self.workThread)
+        QgsApplication.taskManager().addTask(self.consolidateTask)
         super().accept()
 
     def on_consolidation_begun(self):
