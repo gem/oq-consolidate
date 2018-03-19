@@ -52,6 +52,7 @@ class ConsolidateThread(QgsTask):
         self.projectFile = projectFile
         self.saveToZip = saveToZip
         self.progressRange = None
+        self.setDependentLayers(QgsProject.instance().mapLayers().values())
 
     def run(self):
         try:
