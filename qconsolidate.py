@@ -31,14 +31,14 @@ from qgis.PyQt.QtWidgets import QAction
 
 from qgis.core import Qgis
 
-from . import oq_consolidate_dialog
-from . import about_dialog
+from . import qconsolidatedialog
+from . import aboutdialog
 from .utils import log_msg, tr
 
 from . import resources_rc  # NOQA
 
 
-class OQConsolidatePlugin(object):
+class QConsolidatePlugin(object):
     def __init__(self, iface):
         self.iface = iface
 
@@ -90,9 +90,9 @@ class OQConsolidatePlugin(object):
         self.iface.removeToolBarIcon(self.actionRun)
 
     def run(self):
-        self.dlg = oq_consolidate_dialog.QConsolidateDialog()
+        self.dlg = qconsolidatedialog.QConsolidateDialog()
         self.dlg.show()
 
     def about(self):
-        dlg = about_dialog.AboutDialog()
+        dlg = aboutdialog.AboutDialog()
         dlg.exec_()

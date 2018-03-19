@@ -41,8 +41,8 @@ clean:
 	rm -f *.zip
 
 package:
-	cd .. && rm -f *.zip && zip -r oq_consolidate.zip oq_consolidate -x \*.pyc \*.ts \*.ui \*.qrc \*.pro \*~ \*.git\* \*Makefile*
+	cd .. && rm -f *.zip && zip -r qconsolidate.zip qconsolidate -x \*.pyc \*.ts \*.ui \*.qrc \*.pro \*~ \*.git\* \*Makefile*
 	mv ../qconsolidate.zip .
 
 upload:
-	plugin_uploader.py oq_consolidate.zip
+	plugin_uploader.py qconsolidate.zip
