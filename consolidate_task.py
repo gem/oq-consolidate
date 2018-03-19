@@ -43,6 +43,10 @@ from shutil import copyfile
 from .utils import log_msg
 
 
+class TaskCanceled(Exception):
+    pass
+
+
 class ConsolidateTask(QgsTask):
 
     def __init__(self, description, flags, outputDir, projectFile, saveToZip):
@@ -69,7 +73,11 @@ class ConsolidateTask(QgsTask):
             log_msg(msg, level='S', message_bar=iface.messageBar())
         else:
             if self.exception is not None:
-                log_msg(str(self.exception), level='C',
+                if isinstance(self.exception, TaskCanceled):
+                    level = 'W'
+                else:
+                    level = 'C'
+                log_msg(str(self.exception), level=level,
                         message_bar=iface.messageBar(),
                         exception=self.exception)
 
@@ -96,11 +104,11 @@ class ConsolidateTask(QgsTask):
         # keep full paths of exported layer files (used to zip files)
         outFiles = [self.projectFile]
         if self.isCanceled():
-            raise Exception('Consolidation canceled')
+            raise TaskCanceled('Consolidation canceled')
 
         for i, layer in enumerate(layers.values()):
             if not layer.isValid():
-                raise Exception("Layer %s is invalid" % layer.name())
+                raise TypeError("Layer %s is invalid" % layer.name())
             lType = layer.type()
             lProviderType = layer.providerType()
             lName = layer.name()
@@ -117,11 +125,11 @@ class ConsolidateTask(QgsTask):
                             e, layer, lName)
                         outFiles.append(outFile)
             else:
-                raise Exception('Layer %s (type %s) is not supported'
+                raise TypeError('Layer %s (type %s) is not supported'
                                 % (lName, lType))
             self.setProgress(i / self.progressMax * 100)
             if self.isCanceled():
-                raise Exception('Consolidation canceled')
+                raise TaskCanceled('Consolidation canceled')
 
         # save updated project
         self.saveProject(doc)
@@ -139,14 +147,14 @@ class ConsolidateTask(QgsTask):
         if not f.open(QIODevice.ReadOnly | QIODevice.Text):
             msg = self.tr("Cannot read file %s:\n%s.") % (self.projectFile,
                                                           f.errorString())
-            raise Exception(msg)
+            raise IOError(msg)
 
         doc = QDomDocument()
         setOk, errorString, errorLine, errorColumn = doc.setContent(f, True)
         if not setOk:
             msg = (self.tr("Parse error at line %d, column %d:\n%s")
                    % (errorLine, errorColumn, errorString))
-            raise Exception(msg)
+            raise SyntaxError(msg)
 
         f.close()
         return doc
@@ -156,7 +164,7 @@ class ConsolidateTask(QgsTask):
         if not f.open(QIODevice.WriteOnly | QIODevice.Text):
             msg = self.tr("Cannot write file %s:\n%s.") % (self.projectFile,
                                                            f.errorString())
-            raise Exception(msg)
+            raise IOError(msg)
 
         out = QTextStream(f)
         doc.save(out, 4)
@@ -169,7 +177,7 @@ class ConsolidateTask(QgsTask):
         :param archive: path of the archive
         """
         if self.isCanceled():
-            raise Exception('Consolidation canceled')
+            raise TaskCanceled('Consolidation canceled')
         archive = "%s.zip" % archive
         prefix = len(
             os.path.commonprefix([os.path.dirname(f) for f in file_paths]))
@@ -179,7 +187,7 @@ class ConsolidateTask(QgsTask):
                 z.write(f, f[prefix:])
                 self.setProgress(i / self.progressMax * 100)
                 if self.isCanceled():
-                    raise Exception('Consolidation canceled')
+                    raise TaskCanceled('Consolidation canceled')
 
     def copyXmlRasterLayer(self, layerElement, vLayer, layerName):
         outFile = "%s/%s.xml" % (self.layersDir, layerName)
@@ -187,7 +195,7 @@ class ConsolidateTask(QgsTask):
             copyfile(vLayer.dataProvider().dataSourceUri(), outFile)
         except IOError:
             msg = self.tr("Cannot copy layer %s") % layerName
-            raise Exception(msg)
+            raise IOError(msg)
 
         # update project
         layerNode = self.findLayerInProject(layerElement, layerName)
@@ -211,7 +219,7 @@ class ConsolidateTask(QgsTask):
             vLayer, outFile, enc, crs, 'GPKG')
         if error != QgsVectorFileWriter.NoError:
             msg = self.tr("Cannot copy layer %s: %s") % (layerName, error_msg)
-            raise Exception(msg)
+            raise IOError(msg)
 
         # update project
         layerNode = self.findLayerInProject(layerElement, layerName)
