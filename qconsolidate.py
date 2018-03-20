@@ -21,44 +21,38 @@
 # starting from commit 6f27b0b14b925a25c75ea79aea62a0e3d51e30e3.
 
 
+from builtins import str
+from builtins import object
 import qgis  # NOQA
 
 from qgis.PyQt.QtCore import QCoreApplication
-from qgis.PyQt.QtGui import (
-                             QMessageBox,
-                             QAction,
-                             QIcon,
-                             )
+from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtWidgets import QAction
 
-from qgis.core import QGis
+from qgis.core import Qgis
 
-import qconsolidatedialog
-import aboutdialog
+from . import qconsolidatedialog
+from . import aboutdialog
+from .utils import log_msg, tr
 
-import resources_rc  # NOQA
+from . import resources_rc  # NOQA
 
 
-class QConsolidatePlugin:
+class QConsolidatePlugin(object):
     def __init__(self, iface):
         self.iface = iface
 
-        self.qgsVersion = unicode(QGis.QGIS_VERSION_INT)
+        self.qgsVersion = str(Qgis.QGIS_VERSION_INT)  # FIXME: unicode
 
     def initGui(self):
         if int(self.qgsVersion) < 20000:
             qgisVersion = (self.qgsVersion[0] + "."
                            + self.qgsVersion[2] + "."
                            + self.qgsVersion[3])
-            QMessageBox.warning(
-                self.iface.mainWindow(),
-                "OQ-Consolidate",
-                QCoreApplication.translate(
-                    "OQ-Consolidate",
-                    "QGIS %s detected.\n") % (qgisVersion) +
-                QCoreApplication.translate(
-                    "OQ-Consolidate",
-                    ("This version of OQ-Consolidate requires at least"
-                        " QGIS version 2.0.\nPlugin will not be enabled.")))
+            msg = tr("QGIS %s detected.\n" % qgisVersion)
+            msg += tr("This version of OQ-Consolidate requires at least"
+                      " QGIS version 3.0.\nPlugin will not be enabled.")
+            log_msg(msg, level='C', message_bar=self.iface.messageBar())
             return None
 
         self.actionRun = QAction(
@@ -96,8 +90,8 @@ class QConsolidatePlugin:
         self.iface.removeToolBarIcon(self.actionRun)
 
     def run(self):
-        dlg = qconsolidatedialog.QConsolidateDialog(self.iface)
-        dlg.exec_()
+        self.dlg = qconsolidatedialog.QConsolidateDialog()
+        self.dlg.show()
 
     def about(self):
         dlg = aboutdialog.AboutDialog()
