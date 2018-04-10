@@ -24,3 +24,9 @@
 def classFactory(iface):
     from .qconsolidate import QConsolidatePlugin
     return QConsolidatePlugin(iface)
+
+
+try:
+    import oq_utils  # NOQA
+except ImportError:
+    raise ImportError("Please install the OQ Utilities plugin first")

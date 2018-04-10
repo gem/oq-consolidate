@@ -47,7 +47,7 @@ from qgis.core import QgsProject, QgsApplication, QgsTask
 from qgis.utils import iface
 
 from .consolidatethread import ConsolidateTask
-from .utils import log_msg, tr
+from oq_utils.oq_utils import log_msg, tr
 
 
 class QConsolidateDialog(QDialog):

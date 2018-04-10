@@ -33,7 +33,8 @@ from qgis.core import Qgis
 
 from . import qconsolidatedialog
 from . import aboutdialog
-from .utils import log_msg, tr
+
+from oq_utils.oq_utils import log_msg, tr
 
 from . import resources_rc  # NOQA
 

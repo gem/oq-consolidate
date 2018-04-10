@@ -40,7 +40,7 @@ from qgis.utils import iface
 
 from osgeo import gdal
 from shutil import copyfile
-from .utils import log_msg
+from oq_utils.oq_utils import log_msg
 
 
 class TaskCanceled(Exception):
